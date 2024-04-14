@@ -1,5 +1,4 @@
 #include "fem.h"
-
 // Il faut un fifrelin generaliser ce code.....
 //  (1) Ajouter l'axisymétrique !    (mandatory)
 //  (2) Ajouter les conditions de Neumann !   (mandatory)
@@ -7,6 +6,7 @@
 //  (4) Et remplacer le solveur plein par un truc un fifrelin plus subtil  (mandatory)
 
 void femElasticityAssembleElements(femProblem *theProblem) {
+
   femFullSystem *theSystem = theProblem->system;
   femIntegration *theRule = theProblem->rule;
   femDiscrete *theSpace = theProblem->space;
@@ -192,7 +192,9 @@ double *femElasticitySolve(femProblem *theProblem) {
   femElasticityAssembleNeumann(theProblem);
   femElasticityApplyDirichlet(theProblem);
 
-  double *soluce = femFullSystemEliminate(theProblem->system);
+  double *soluce = femFullSystemEliminate(theProblem->system);  // faudra changer
   memcpy(theProblem->soluce, soluce, theProblem->system->size * sizeof(double));
   return theProblem->soluce;
 }
+
+// les fonctions utiles au solveur bande
