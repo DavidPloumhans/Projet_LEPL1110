@@ -20,27 +20,40 @@ int main(void) {
   geoInitialize();
   femGeo *theGeometry = geoGetGeometry();
 
-  // OPTION 1 : Utilisation de GMSH avec OpenCascade
-  // theGeometry->h = 0.05;
-  // geoMeshGenerate();
-
-  // OPTION 2 : Utilisation de GMSH directement
-  // theGeometry->h = 0.05;
-  // geoMeshGenerateGeo();
-
-  // OPTION 3 : Lecture d'un fichier .geo
-  theGeometry->h = 0.05;
-  geoMeshGenerateGeoFile("../data/mesh.geo");
-
-  // OPTION 4 : Lecture d'un fichier .msh
-  // geoMeshGenerateMshFile("../data/mesh.msh");
+  
+  // OPTION 1 : Utilisation de GMSH avec OpenCascade, c'est ce que nous avons choisi d'utiliser
+  theGeometry->h1 = 4.0;  // petit changement par rapport à la version donnée par les professeurs. On a 2 h donc h1 et h2 au lieu d'uniquement h
+  theGeometry->h2 = 4.0;  // suite
+  theGeometry->l1 = 1.0;
+  theGeometry->l2 = 2.0;
+  theGeometry->r = 0.5;  // < h2 et < l1
 
 
+  geoMeshGenerate();
   geoMeshImport();
-  geoSetDomainName(0, "Something");
-  geoSetDomainName(1, "SomethingElse");
-  geoMeshWrite("../data/mesh.txt");
+  
+  // définition des domaines
+  geoSetDomainName(16, "Bottom");
+  geoSetDomainName(17, "Symmetry");
+  geoSetDomainName(18, "Top");
+  //Ligne supérieure précédant toute courbure 
+  geoSetDomainName(8, "Upper_line_black");
+  geoSetDomainName(9, "Upper_line_brown");
+  //Deux courbures convexes de notre maillage 
+  //Supérieure
+  geoSetDomainName(2,"Upper_curvature"); 
+  //Inférieure
+  geoSetDomainName(5,"Lower_curvature");
+  //Courbure concave de notre maillage
+  geoSetDomainName(14,"Concave_curvature");
+  //Partie inférieure à la courbure concave
+  geoSetDomainName(10,"Lower_line_purple");
+  geoSetDomainName(11,"Lower_line_brown");
 
+  // Ecriture du maillage dans le fichier texte utilisé par PROJECT  
+  geoMeshWrite("../data/mesh.txt");
+  
+  
   //
   //  -2- Definition du probleme
   //
@@ -51,9 +64,12 @@ int main(void) {
   double gx = 0;
   double gy = -9.81;
 
-  femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, PLANAR_STRAIN);
-  femElasticityAddBoundaryCondition(theProblem, "Something", DIRICHLET_XY, 0.0, 0.0);
-  femElasticityAddBoundaryCondition(theProblem, "SomethingElse", DIRICHLET_Y, 0.0, NAN);
+  femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, PLANAR_STRAIN);  // Déformation plane, pas contrainte plane
+  // faut rajouter les conditions aux limites
+  femElasticityAddBoundaryCondition(theProblem, "Upper_line_brown", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Lower_line_brown", DIRICHLET_X, 0.0, NAN);
+
+  // femElasticityAddBoundaryCondition(theProblem, "SomethingElse", DIRICHLET_Y, 0.0, NAN);
   femElasticityPrint(theProblem);
   femElasticityWrite(theProblem, "../data/problem.txt");
 
@@ -67,7 +83,8 @@ int main(void) {
     meshSizeField[i] = theGeometry->geoSize(theNodes->X[i], theNodes->Y[i]);
   double hMin = femMin(meshSizeField, theNodes->nNodes);
   double hMax = femMax(meshSizeField, theNodes->nNodes);
-  printf(" ==== Global requested h : %14.7e \n", theGeometry->h);
+  printf(" ==== Global requested h1 : %14.7e \n", theGeometry->h1);  // petit changement par rapport à la version donnée par les professeurs. On a 2 h donc h1 et h2 au lieu d'uniquement h
+  printf(" ==== Global requested h2 : %14.7e \n", theGeometry->h2);  // suite
   printf(" ==== Minimum h          : %14.7e \n", hMin);
   printf(" ==== Maximum h          : %14.7e \n", hMax);
 
@@ -130,7 +147,7 @@ int main(void) {
 
   free(meshSizeField);
   femElasticityFree(theProblem);
-  geoFree();
+  geoFree ();
   glfwTerminate();
 
   exit(EXIT_SUCCESS);

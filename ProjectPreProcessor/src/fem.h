@@ -50,8 +50,8 @@ typedef struct {
 } femDomain;
 
 typedef struct {
-  double LxPlate, LyPlate;
-  double h;
+  double h1, h2, l1, l2, r;
+  double h; // inutile pour le final mais utile pour les tests intermédiaires
   femElementType elementType;
   double (*geoSize)(double x, double y);
   femNodes *theNodes;
