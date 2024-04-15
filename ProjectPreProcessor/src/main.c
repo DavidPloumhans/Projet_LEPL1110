@@ -65,7 +65,16 @@ int main(void) {
 
   femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, PLANAR_STRAIN);  // Déformation plane, pas contrainte plane
   // faut rajouter les conditions aux limites
-  femElasticityAddBoundaryCondition(theProblem, "Upper_line_brown", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, NAN, 0.0);
+  femElasticityAddBoundaryCondtion(theProblem, "Upper_line_black", NEUMANN_X, 0.0);
+  femElasticityAddBoundaryCondition(theProblem,"Upper_line_brown", NEUMANN_X, 0.0);
+  femElasticityAddBoundaryCondition(theProblem,"Upper_curvature", NEUMANN_N, 0.0);
+  femElasticityAddBoundaryCondition(theProblem,"Concave_curvature", NEUMANN_N, 0.0);
+  femElasticityAddBoundaryCondition(theProblem,"Purple_line", NEUMANN_X, 0.0); 
+  femElasticityAddBoundaryCondition(theProblem,"Lower_line_brown", NEUMANN_X, 0.0);
+  femElasticityAddBoundaryCondition(theProblem,"Bottom_curve", NEUMANN_X, 0.0); 
+  femElasticityAddBoundaryCondition(theProblem,"Bottom", NEUMANN_Y, 0.0);
   femElasticityAddBoundaryCondition(theProblem, "Lower_line_brown", DIRICHLET_X, 0.0, NAN);
   femElasticityAddBoundaryCondition(theProblem, "Bottom", DIRICHLET_Y, 0.0, NAN);  // pas vrai mais pour test
 
