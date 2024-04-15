@@ -6,3 +6,4 @@ Gravity-X          :  0.0000000e+00
 Gravity-Y          : -9.8100000e+00  
 Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Upper_line_brown
 Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Lower_line_brown
+Boundary condition :  Dirichlet-Y        =  0.0000000e+00,            nan : Bottom

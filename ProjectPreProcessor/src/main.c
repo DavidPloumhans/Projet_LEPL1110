@@ -25,7 +25,7 @@ int main(void) {
   theGeometry->h1 = 4.0;  // petit changement par rapport à la version donnée par les professeurs. On a 2 h donc h1 et h2 au lieu d'uniquement h
   theGeometry->h2 = 4.0;  // suite
   theGeometry->l1 = 1.0;
-  theGeometry->l2 = 2.0;
+  theGeometry->l2 = 3.0;
   theGeometry->r = 0.5;  // < h2 et < l1
 
 
@@ -68,6 +68,7 @@ int main(void) {
   // faut rajouter les conditions aux limites
   femElasticityAddBoundaryCondition(theProblem, "Upper_line_brown", DIRICHLET_X, 0.0, NAN);
   femElasticityAddBoundaryCondition(theProblem, "Lower_line_brown", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Bottom", DIRICHLET_Y, 0.0, NAN);  // pas vrai mais pour test
 
   // femElasticityAddBoundaryCondition(theProblem, "SomethingElse", DIRICHLET_Y, 0.0, NAN);
   femElasticityPrint(theProblem);
