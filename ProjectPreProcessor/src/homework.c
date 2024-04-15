@@ -68,6 +68,7 @@ double geoSize(double x, double y){
     double dist_notch = dist(x, y, xNotch, yNotch)-rNotch;
     double dist_arc_2 = dist(x, y, x_second_arc, y_second_arc)-r_second_arc;
     double dist_side = dist(x, y, x_side, y_side)-r;
+    /*
     if (dist_arc_1 < dArc_1 && dist_notch > dNotch) {
         return a0*dist_arc_1*dist_arc_1*dist_arc_1 + b0*dist_arc_1*dist_arc_1 + c0*dist_arc_1 + d00;
     }
@@ -108,10 +109,12 @@ double geoSize(double x, double y){
     if (y < h2) {
         toReturn = fmin(toReturn, hd * y * y + 0.03);
     }
+    */
+
     // printf("toReturn = %f\n", toReturn);
     // toReturn = hstar;
-    return fabs(toReturn);
-    */
+    return h/2.234;
+
 }
 
 
@@ -128,112 +131,66 @@ void geoMeshGenerate() {
     double l2 = theGeometry->l2;
     double r = theGeometry->r;
 
-    // Dimensions de notre Notch, il y en aura toujours 1 
-    double xNotch = (l2/2.0)+l1-r;
-    double yNotch = h2 - r;
-    double rNotch = r;
-    //coordonnée du centre de notre 1er arc de cercle en haut
-    double x_first_arc = (l2/2.0)+l1-r;
-    double y_first_arc = h2+r;
-    double r_first_arc = r;
-    //coordonnée du centre de notre 2eme arc de cercle en bas
-    double x_second_arc = l2/4.0;
-    double y_second_arc = l2/4.0;
-    double r_second_arc = l2/4.0;
 
  //
 //  -1- Construction de la g�om�trie avec OpenCascade
 //
  
     int ierr;
-    int idPlate = gmshModelOccAddRectangle(0, 0, 0, (l2 + 2 * l1)/2.0, h1 + h2, -1, 0, &ierr);   // c'est x, y et z lower left corner puis dx, dy, tag et rounded_radius
+    int origine = gmshModelOccAddPoint(0.0, 0.0, 0.0, 0.0, -1, &ierr);  
     ErrorGmsh(ierr);
-    int idRect_1 = gmshModelOccAddRectangle(l2/2.0, 0, 0, l1, h2-r, -1, 0, &ierr);   // c'est x, y et z lower left corner puis dx, dy, tag et rounded_radius
+    int top_left_corner = gmshModelOccAddPoint(0.0, h2+h1, 0.0, 0.0,-1,&ierr);
     ErrorGmsh(ierr);
-    int idDiskl = gmshModelOccAddDisk(xNotch, yNotch, 0, rNotch, rNotch, -1, NULL,0,NULL,0,&ierr);  // c'est xc, yc, zc, rx, ry, tag
+    int Symetry_line = gmshModelOccAddLine(top_left_corner, origine,-1, &ierr);
     ErrorGmsh(ierr);
-    int idRect_2 = gmshModelOccAddRectangle(xNotch, yNotch, 0, r, r, -1, 0, &ierr);   // c'est x, y et z lower left corner puis dx, dy, tag et rounded_radius
+    int top_right_corner = gmshModelOccAddPoint(l1+l2/2.0, h2+h1, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int higherRect = gmshModelOccAddRectangle(xNotch, yNotch+r, 0, r, r, -1, 0, &ierr);   // c'est x, y et z lower left corner puis dx, dy, tag et rounded_radius
+    int Top = gmshModelOccAddLine(top_right_corner, top_left_corner,-1, &ierr);
     ErrorGmsh(ierr);
-    int lowerRect = gmshModelOccAddRectangle(l2/4.0, 0, 0, r_second_arc, r_second_arc, -1, 0, &ierr);   // c'est x, y et z lower left corner puis dx, dy, tag et rounded_radius
+    int low_black_domain_corner = gmshModelOccAddPoint(l1+l2/2.0, h2+h1/2.0, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int plate[] = {2, idPlate};
-    int rightBigRectangle []= {2, idRect_1};
-    int Diskl[] = {2, idDiskl};
-    int rightSmallRectangle[] = {2, idRect_2};
-    int HigherRect[] = {2, higherRect};
-    int LowerRect[] = {2, lowerRect};
-
-    //Génération des arcs des cercles, en premier, l'arc de cercle en haut à droite
-    int startTag = gmshModelOccAddPoint(x_first_arc, y_first_arc-r, 0.0, 0, -1, &ierr);
+    int top_black_domain = gmshModelOccAddLine(low_black_domain_corner, top_right_corner,-1, &ierr);
     ErrorGmsh(ierr);
-    int endTag = gmshModelOccAddPoint(x_first_arc+r, y_first_arc, 0.0, 0, -1, &ierr);
+    // Start curve 1 sera la fin du domaine en mauve
+    int start_curve_1 = gmshModelOccAddPoint(l1+l2/2.0, h2+r, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int middleTag = gmshModelOccAddPoint(x_first_arc,y_first_arc, 0.0, 0, -1, &ierr);
+    int purple_domain = gmshModelOccAddLine(start_curve_1, low_black_domain_corner,-1, &ierr);
     ErrorGmsh(ierr);
-    int circleArc = gmshModelOccAddCircleArc(startTag, middleTag, endTag, -1,1, &ierr);
+    int center_curve_1 = gmshModelOccAddPoint(l1+l2/2.0-r, h2+r, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int line1 = gmshModelOccAddLine(endTag,middleTag, -1, &ierr);
+    int end_curve_1 = gmshModelOccAddPoint(l1+l2/2.0-r, h2, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int line2 = gmshModelOccAddLine(middleTag,startTag, -1, &ierr);
+    // le début de la courbe 2 est le même que la fin de la courbe 1
+    int curve_1 = gmshModelOccAddCircleArc(end_curve_1, center_curve_1, start_curve_1,-1,1, &ierr);
     ErrorGmsh(ierr);
-    int circleArc1[] = {2, circleArc};
-    int Curve_1[3] = {line1, line2, circleArc};
-    int closeCurve_1 = gmshModelOccAddCurveLoop(Curve_1, 3, -1, &ierr);
+    int center_curve_2 = gmshModelOccAddPoint(l1+l2/2.0-r, h2-r, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int surface_1[1] = {closeCurve_1};
-    int surface_1_tag = gmshModelOccAddPlaneSurface(surface_1, 1, -1, &ierr);
+    int end_curve_2 = gmshModelOccAddPoint(l2/2.0, h2-r, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    //Génération du deuxième arc de cercle qui est celui en bas à droite
-    int startTag2 = gmshModelOccAddPoint(x_second_arc, 0, 0.0, 0, -1, &ierr);
+    int curve_2 = gmshModelOccAddCircleArc(end_curve_2, center_curve_2, end_curve_1,-1,1, &ierr);
     ErrorGmsh(ierr);
-    int endTag2 = gmshModelOccAddPoint(x_second_arc+r_second_arc,y_second_arc, 0.0, 0, -1, &ierr);
+    int purple_domain_2_end = gmshModelOccAddPoint(l2/2.0,h2/2.0 ,0.0,0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int middleTag2 = gmshModelOccAddPoint(x_second_arc, y_second_arc, 0.0, 0, -1, &ierr);
+    int purple_domain_2 = gmshModelOccAddLine(purple_domain_2_end, end_curve_2,-1, &ierr);
     ErrorGmsh(ierr);
-    int circleArc2 = gmshModelOccAddCircleArc(startTag2, middleTag2, endTag2, -1,1, &ierr);
+    int brown_domain_end = gmshModelOccAddPoint(l2/2.0, l2/4.0, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int line3 = gmshModelOccAddLine(endTag2,middleTag2, -1, &ierr);
+    int brown_domain = gmshModelOccAddLine(brown_domain_end, purple_domain_2_end,-1, &ierr);
     ErrorGmsh(ierr);
-    int line4 = gmshModelOccAddLine(middleTag2,startTag2, -1, &ierr);
+    int center_curve_3 = gmshModelOccAddPoint(l2/4.0, l2/4.0, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int circleArc2_1[] = {2, circleArc2};
-    int Curve_2[3] = {line3, line4, circleArc2};
-    int closeCurve_2 = gmshModelOccAddCurveLoop(Curve_2, 3, -1, &ierr);
+    int end_curve_3 = gmshModelOccAddPoint(l2/4.0, 0.0, 0.0, 0.0,-1, &ierr);
     ErrorGmsh(ierr);
-    int surface_2[1] = {closeCurve_2};
-    int surface_2_tag = gmshModelOccAddPlaneSurface(surface_2, 1, -1, &ierr);
+    int curve_3 = gmshModelOccAddCircleArc(end_curve_3, center_curve_3, brown_domain_end,-1,1, &ierr);
     ErrorGmsh(ierr);
-    //Création des domaines de notre projet (voir rapport pour plus de détails)
-    // Ligne supérieure droite partie noire
-    int StartTag_3 = gmshModelOccAddPoint((l2/2.0)+l1, h2+h1, 0.0, 0, -1, &ierr);
-    int EndTag_3 = gmshModelOccAddPoint((l2/2.0)+l1, h2+h1/2.0, 0.0, 0, -1, &ierr);
-    int line_4 = gmshModelOccAddLine(StartTag_3, EndTag_3, -1, &ierr);
-    // Ligne supérieure droite partie brune 
-    int EndTag_4 = gmshModelOccAddPoint((l2/2.0)+l1, h2+r, 0.0, 0, -1, &ierr);
-    int line_5 = gmshModelOccAddLine(EndTag_3, EndTag_4, -1, &ierr);
-    //Ligne inférieure droite partie mauve 
-    int StartTag_5 = gmshModelOccAddPoint((l2/2.0), h2-r, 0.0, 0, -1, &ierr);
-    int EndTag_5 = gmshModelOccAddPoint((l2/2.0), h2/1.5-r, 0.0, 0, -1, &ierr);
-    int line_6 = gmshModelOccAddLine(StartTag_5, EndTag_5, -1, &ierr);
-    //Ligne inférieure droite partie brune 
-    int EndTag_6 = gmshModelOccAddPoint((l2/2.0), r, 0.0, 0, -1, &ierr);
-    int line_7 = gmshModelOccAddLine(EndTag_5, EndTag_6, -1, &ierr);
-
-
-    gmshModelOccCut(plate, 2, Diskl, 2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);   // c'est objectDimTags, objectDimTags_n, toolDimtags, toolDimtags_n
+    int bottom = gmshModelOccAddLine(origine, end_curve_3,-1, &ierr);
     ErrorGmsh(ierr);
-    gmshModelOccCut(plate, 2, rightBigRectangle, 2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
+    int curve [10] = {bottom, curve_3, brown_domain, purple_domain_2, curve_2, curve_1, purple_domain, top_black_domain, Top, Symetry_line};
+    int domain = gmshModelOccAddWire(curve, 10, -1,1, &ierr);
     ErrorGmsh(ierr);
-    gmshModelOccCut(plate, 2, rightSmallRectangle, 2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr); 
-    ErrorGmsh(ierr);
-    gmshModelOccCut(plate, 2, HigherRect, 2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
-    ErrorGmsh(ierr);
-    gmshModelOccCut(plate, 2, LowerRect, 2,NULL,NULL,NULL,NULL,NULL,-1,1,1,&ierr);
-    ErrorGmsh(ierr);
-
-    
+    int domain_pointer[1]={domain};
+    int surface = gmshModelOccAddPlaneSurface(domain_pointer,1,-1, &ierr);
+    ErrorGmsh(ierr); 
 
 //
 //  -2- D�finition de la fonction callback pour la taille de r�f�rence

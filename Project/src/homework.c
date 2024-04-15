@@ -24,7 +24,7 @@ void femElasticityAssembleElements(femProblem *theProblem) {
   double gy = theProblem->gy;
   double **A = theSystem->A;
   double *B = theSystem->B;
-
+  int count = 0;
   for (iElem = 0; iElem < theMesh->nElem; iElem++) {
     for (j = 0; j < nLocal; j++) {
       map[j] = theMesh->elem[iElem * nLocal + j];
@@ -33,8 +33,16 @@ void femElasticityAssembleElements(femProblem *theProblem) {
       x[j] = theNodes->X[map[j]];
       y[j] = theNodes->Y[map[j]];
     }
-
+    
+    /*
+    printf("Element %d\n", iElem);
+    printf("X[0] = %f, Y[0] = %f\n", x[0], y[0]);
+    printf("X[1] = %f, Y[1] = %f\n", x[1], y[1]);
+    printf("X[2] = %f, Y[2] = %f\n", x[2], y[2]);
+    */
+   
     for (iInteg = 0; iInteg < theRule->n; iInteg++) {
+      
       double xsi = theRule->xsi[iInteg];
       double eta = theRule->eta[iInteg];
       double weight = theRule->weight[iInteg];
@@ -52,8 +60,10 @@ void femElasticityAssembleElements(femProblem *theProblem) {
         dydeta += y[i] * dphideta[i];
       }
       double jac = dxdxsi * dydeta - dxdeta * dydxsi;
-      if (jac < 0.0)
+      if (jac < 0.0 && iInteg == 0) {
         printf("Negative jacobian! Your mesh is oriented in reverse. The normals will be wrong\n");
+        count++;
+      }
       jac = fabs(jac);
 
       for (i = 0; i < theSpace->n; i++) {
@@ -74,6 +84,14 @@ void femElasticityAssembleElements(femProblem *theProblem) {
       }
     }
   }
+  // affichage de la matrice A
+
+  for (i = 0; i < theSystem->size; i++) {
+    if (i < 200) {
+      // printf("A[%d][%d] = %f\n", i, i, A[i][i]);
+    }
+  }
+  printf("Nombre de Jacobiens négatifs : %d\n", count);
 }
 
 void femElasticityAssembleNeumann(femProblem *theProblem) {

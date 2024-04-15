@@ -450,6 +450,7 @@ double *femFullSystemEliminate(femFullSystem *mySystem) {
   /* Gauss elimination */
 
   for (k = 0; k < size; k++) {
+    // printf("Pivot %d \n", k);
     if (fabs(A[k][k]) <= 1e-16) {
       printf("Pivot index %d  ", k);
       printf("Pivot value %e  ", A[k][k]);

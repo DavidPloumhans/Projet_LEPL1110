@@ -30,25 +30,24 @@ int main(void) {
 
 
   geoMeshGenerate();
-  geoMeshImport2();
+  geoMeshImport();
   
   // définition des domaines
-  geoSetDomainName(16, "Bottom");
-  geoSetDomainName(17, "Symmetry");
-  geoSetDomainName(18, "Top");
+  geoSetDomainName(0, "Symetry");
+  geoSetDomainName(1, "Top");
   //Ligne supérieure précédant toute courbure 
-  geoSetDomainName(8, "Upper_line_black");
-  geoSetDomainName(9, "Upper_line_brown");
-  //Deux courbures convexes de notre maillage 
-  //Supérieure
-  geoSetDomainName(2,"Upper_curvature"); 
-  //Inférieure
-  geoSetDomainName(5,"Lower_curvature");
-  //Courbure concave de notre maillage
-  geoSetDomainName(14,"Concave_curvature");
+  geoSetDomainName(2, "Upper_line_black");
+  geoSetDomainName(3, "Upper_line_brown");
+  //Courbe convexe supérieure
+  geoSetDomainName(4,"Upper_curvature"); 
+  //Courbe concave
+  geoSetDomainName(5,"Concave_curvature");
   //Partie inférieure à la courbure concave
-  geoSetDomainName(10,"Lower_line_purple");
-  geoSetDomainName(11,"Lower_line_brown");
+  geoSetDomainName(6,"Purple_line");
+  geoSetDomainName(7,"Lower_line_brown");
+  //Courbure convexe inférieure
+  geoSetDomainName(8,"Bottom_curve");
+  geoSetDomainName(9,"Bottom");
 
   // Ecriture du maillage dans le fichier texte utilisé par PROJECT  
   geoMeshWrite("../data/mesh.txt");
@@ -67,17 +66,17 @@ int main(void) {
   femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, PLANAR_STRAIN);  // Déformation plane, pas contrainte plane
 
   // faut rajouter les conditions aux limites
-  double sigma_syn = 5.e9;  // contraintes chambre de synthèse
-  double sigma_fluid = 2.e9;  // contraintes chambre de fluide
-  double sigma_press = 3.e9;  // à faire en mieux
-  femElasticityAddBoundaryCondition(theProblem, "Upper_line_brown", DIRICHLET_X, 0.0, NAN);  // déplacement nul en X
-  femElasticityAddBoundaryCondition(theProblem, "Lower_line_brown", DIRICHLET_X, 0.0, NAN);   // déplacement nul en X
-  femElasticityAddBoundaryCondition(theProblem, "Lower_line_purple", NEUMANN_N, sigma_fluid, NAN);  // zone avec le fluide
-  femElasticityAddBoundaryCondition(theProblem, "Bottom", NEUMANN_Y, sigma_syn, NAN);
-  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, sigma_press, NAN);
-  femElasticityAddBoundaryCondition(theProblem, "Concave_curvature", NEUMANN_N, sigma_fluid, NAN);
-  femElasticityAddBoundaryCondition(theProblem, "Upper_curvature", NEUMANN_N, sigma_fluid, NAN);
-  femElasticityAddBoundaryCondition(theProblem, "Lower_curvature", NEUMANN_N, sigma_syn, NAN);
+  // femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, 0.0, NAN);
+  // femElasticityAddBoundaryCondition(theProblem, "Upper_line_black", NEUMANN_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Upper_line_brown", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Upper_curvature", NEUMANN_N, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Concave_curvature", NEUMANN_N, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Purple_line", NEUMANN_X, 0.0, NAN); 
+  femElasticityAddBoundaryCondition(theProblem,"Lower_line_brown", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Bottom_curve", NEUMANN_N, 0.0, NAN); 
+  femElasticityAddBoundaryCondition(theProblem, "Bottom", DIRICHLET_Y, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);
 
   
   femElasticityPrint(theProblem);
