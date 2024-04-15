@@ -33,22 +33,21 @@ int main(void) {
   geoMeshImport();
   
   // définition des domaines
-  geoSetDomainName(16, "Bottom");
-  geoSetDomainName(17, "Symmetry");
-  geoSetDomainName(18, "Top");
+  geoSetDomainName(0, "Symetry");
+  geoSetDomainName(1, "Top");
   //Ligne supérieure précédant toute courbure 
-  geoSetDomainName(8, "Upper_line_black");
-  geoSetDomainName(9, "Upper_line_brown");
-  //Deux courbures convexes de notre maillage 
-  //Supérieure
-  geoSetDomainName(2,"Upper_curvature"); 
-  //Inférieure
-  geoSetDomainName(5,"Lower_curvature");
-  //Courbure concave de notre maillage
-  geoSetDomainName(14,"Concave_curvature");
+  geoSetDomainName(2, "Upper_line_black");
+  geoSetDomainName(3, "Upper_line_brown");
+  //Courbe convexe supérieure
+  geoSetDomainName(4,"Upper_curvature"); 
+  //Courbe concave
+  geoSetDomainName(5,"Concave_curvature");
   //Partie inférieure à la courbure concave
-  geoSetDomainName(10,"Lower_line_purple");
-  geoSetDomainName(11,"Lower_line_brown");
+  geoSetDomainName(6,"Purple_line");
+  geoSetDomainName(7,"Lower_line_brown");
+  //Courbure convexe inférieure
+  geoSetDomainName(8,"Bottom_curve");
+  geoSetDomainName(9,"Bottom");
 
   // Ecriture du maillage dans le fichier texte utilisé par PROJECT  
   geoMeshWrite("../data/mesh.txt");
