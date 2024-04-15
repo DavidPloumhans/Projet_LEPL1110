@@ -25,12 +25,12 @@ int main(void) {
   theGeometry->h1 = 4.0;  // petit changement par rapport à la version donnée par les professeurs. On a 2 h donc h1 et h2 au lieu d'uniquement h
   theGeometry->h2 = 4.0;  // suite
   theGeometry->l1 = 1.0;
-  theGeometry->l2 = 3.0;
+  theGeometry->l2 = 2.0;
   theGeometry->r = 0.5;  // < h2 et < l1
 
 
   geoMeshGenerate();
-  geoMeshImport();
+  geoMeshImport2();
   
   // définition des domaines
   geoSetDomainName(16, "Bottom");
@@ -65,12 +65,21 @@ int main(void) {
   double gy = -9.81;
 
   femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, PLANAR_STRAIN);  // Déformation plane, pas contrainte plane
-  // faut rajouter les conditions aux limites
-  femElasticityAddBoundaryCondition(theProblem, "Upper_line_brown", DIRICHLET_X, 0.0, NAN);
-  femElasticityAddBoundaryCondition(theProblem, "Lower_line_brown", DIRICHLET_X, 0.0, NAN);
-  femElasticityAddBoundaryCondition(theProblem, "Bottom", DIRICHLET_Y, 0.0, NAN);  // pas vrai mais pour test
 
-  // femElasticityAddBoundaryCondition(theProblem, "SomethingElse", DIRICHLET_Y, 0.0, NAN);
+  // faut rajouter les conditions aux limites
+  double sigma_syn = 5.e9;  // contraintes chambre de synthèse
+  double sigma_fluid = 2.e9;  // contraintes chambre de fluide
+  double sigma_press = 3.e9;  // à faire en mieux
+  femElasticityAddBoundaryCondition(theProblem, "Upper_line_brown", DIRICHLET_X, 0.0, NAN);  // déplacement nul en X
+  femElasticityAddBoundaryCondition(theProblem, "Lower_line_brown", DIRICHLET_X, 0.0, NAN);   // déplacement nul en X
+  femElasticityAddBoundaryCondition(theProblem, "Lower_line_purple", NEUMANN_N, sigma_fluid, NAN);  // zone avec le fluide
+  femElasticityAddBoundaryCondition(theProblem, "Bottom", NEUMANN_Y, sigma_syn, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, sigma_press, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Concave_curvature", NEUMANN_N, sigma_fluid, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Upper_curvature", NEUMANN_N, sigma_fluid, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Lower_curvature", NEUMANN_N, sigma_syn, NAN);
+
+  
   femElasticityPrint(theProblem);
   femElasticityWrite(theProblem, "../data/problem.txt");
 

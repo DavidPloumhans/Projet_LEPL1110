@@ -125,6 +125,7 @@ void geoMeshGenerateGeo(void);
 void geoMeshGenerateGeoFile(const char *filename);
 void geoMeshGenerateMshFile(const char *filename);
 void geoMeshImport(void);
+void geoMeshImport2(void);
 void geoMeshPrint(void);
 void geoMeshWrite(const char *filename);
 void geoMeshRead(const char *filename);
