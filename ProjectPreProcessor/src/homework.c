@@ -41,7 +41,7 @@ double geoSize(double x, double y){
     double x_side = 0.0;
     double y_side = h2/5.0;
     //Paramètres de notre maille les 2 arcs ont exactement les mêmes paramètres à l'exception de leur position
-    double h = ((l2/2.0)+l1)*0.3;  // c'est ici que tu affines globalement la maille
+    double h = ((l2/2.0)+l1)*0.3;
     double h_circle_arc = h*0.2;
     double dArc_1 = h*1.0;
     double dArc_2 = h*4.0;
@@ -51,13 +51,13 @@ double geoSize(double x, double y){
 
 
     //Coéfficients de la fonction de la taille de la maille pour l'arc
-    double a0 = -2.0*(h-h_circle_arc)/(dArc_1*dArc_1*dArc_1);
-    double b0 = 3.0*(h-h_circle_arc)/(dArc_1*dArc_1);
+    double a0 = -2*(h-h_circle_arc)/(dArc_1*dArc_1*dArc_1);
+    double b0 = 3*(h-h_circle_arc)/(dArc_1*dArc_1);
     double c0 = 0;
     double d00 = h_circle_arc;
     //Coéfficients de la deuxieme fonction (Notch)
-    double a2 = -2.0*(h-h_Notch)/(dNotch*dNotch*dNotch);
-    double b2 = 3.0*(h-h_Notch)/(dNotch*dNotch);
+    double a2 = -2*(h-h_Notch)/(dNotch*dNotch*dNotch);
+    double b2 = 3*(h-h_Notch)/(dNotch*dNotch);
     double c2 = 0;
     double d02 = h_Notch; 
    
@@ -68,7 +68,6 @@ double geoSize(double x, double y){
     double dist_notch = dist(x, y, xNotch, yNotch)-rNotch;
     double dist_arc_2 = dist(x, y, x_second_arc, y_second_arc)-r_second_arc;
     double dist_side = dist(x, y, x_side, y_side)-r;
-
     if (dist_arc_1 < dArc_1 && dist_notch > dNotch) {
         return a0*dist_arc_1*dist_arc_1*dist_arc_1 + b0*dist_arc_1*dist_arc_1 + c0*dist_arc_1 + d00;
     }
@@ -139,8 +138,8 @@ void geoMeshGenerate() {
     double r_first_arc = r;
     //coordonnée du centre de notre 2eme arc de cercle en bas
     double x_second_arc = l2/4.0;
-    double y_second_arc = r;
-    double r_second_arc = r;
+    double y_second_arc = l2/4.0;
+    double r_second_arc = l2/4.0;
 
  //
 //  -1- Construction de la g�om�trie avec OpenCascade
@@ -157,7 +156,7 @@ void geoMeshGenerate() {
     ErrorGmsh(ierr);
     int higherRect = gmshModelOccAddRectangle(xNotch, yNotch+r, 0, r, r, -1, 0, &ierr);   // c'est x, y et z lower left corner puis dx, dy, tag et rounded_radius
     ErrorGmsh(ierr);
-    int lowerRect = gmshModelOccAddRectangle(l2/4.0, 0, 0, r, r, -1, 0, &ierr);   // c'est x, y et z lower left corner puis dx, dy, tag et rounded_radius
+    int lowerRect = gmshModelOccAddRectangle(l2/4.0, 0, 0, r_second_arc, r_second_arc, -1, 0, &ierr);   // c'est x, y et z lower left corner puis dx, dy, tag et rounded_radius
     ErrorGmsh(ierr);
     int plate[] = {2, idPlate};
     int rightBigRectangle []= {2, idRect_1};
@@ -189,7 +188,7 @@ void geoMeshGenerate() {
     //Génération du deuxième arc de cercle qui est celui en bas à droite
     int startTag2 = gmshModelOccAddPoint(x_second_arc, 0, 0.0, 0, -1, &ierr);
     ErrorGmsh(ierr);
-    int endTag2 = gmshModelOccAddPoint(x_second_arc+r,y_second_arc, 0.0, 0, -1, &ierr);
+    int endTag2 = gmshModelOccAddPoint(x_second_arc+r_second_arc,y_second_arc, 0.0, 0, -1, &ierr);
     ErrorGmsh(ierr);
     int middleTag2 = gmshModelOccAddPoint(x_second_arc, y_second_arc, 0.0, 0, -1, &ierr);
     ErrorGmsh(ierr);
