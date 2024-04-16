@@ -1,4 +1,4 @@
-Type of problem    :  Planar strains 
+Type of problem    :  Axi-symetric problem 
 Young modulus      :  7.0000000e+11  
 Poisson ratio      :  3.1000000e-01  
 Mass density       :  1.5630000e+04  

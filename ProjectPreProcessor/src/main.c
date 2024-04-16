@@ -63,7 +63,7 @@ int main(void) {
   double gx = 0;
   double gy = -9.81;
 
-  femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, PLANAR_STRAIN);  // Déformation plane, pas contrainte plane
+  femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, AXISYM);  // Axisymétrique
 
   // faut rajouter les conditions aux limites
   // femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);
