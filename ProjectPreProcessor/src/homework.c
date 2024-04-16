@@ -113,7 +113,7 @@ double geoSize(double x, double y){
 
     // printf("toReturn = %f\n", toReturn);
     // toReturn = hstar;
-    return h/2.234;
+    return h/8.0;
 
 }
 

@@ -66,15 +66,16 @@ int main(void) {
   femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, AXISYM);  // Axisymétrique
 
   // faut rajouter les conditions aux limites
-  // femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);
-  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, 0.0, NAN);
-  // femElasticityAddBoundaryCondition(theProblem, "Upper_line_black", NEUMANN_X, 0.0, NAN);
+  double topStress = 3.e9;
+  double fluidStress = 1.5e9;
+  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, topStress, NAN);
+  // femElasticityAddBoundaryCondition(theProblem, "Upper_line_black", NEUMANN_X, 0.0, NAN);  // pas nécessaire car condition naturelle
   femElasticityAddBoundaryCondition(theProblem,"Upper_line_brown", DIRICHLET_X, 0.0, NAN);
-  femElasticityAddBoundaryCondition(theProblem,"Upper_curvature", NEUMANN_N, 0.0, NAN);
-  femElasticityAddBoundaryCondition(theProblem,"Concave_curvature", NEUMANN_N, 0.0, NAN);
-  femElasticityAddBoundaryCondition(theProblem,"Purple_line", NEUMANN_X, 0.0, NAN); 
+  femElasticityAddBoundaryCondition(theProblem,"Upper_curvature", NEUMANN_N, fluidStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Concave_curvature", NEUMANN_N, fluidStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Purple_line", NEUMANN_X, fluidStress, NAN); 
   femElasticityAddBoundaryCondition(theProblem,"Lower_line_brown", DIRICHLET_X, 0.0, NAN);
-  femElasticityAddBoundaryCondition(theProblem,"Bottom_curve", NEUMANN_N, 0.0, NAN); 
+  femElasticityAddBoundaryCondition(theProblem,"Bottom_curve", DIRICHLET_Y, 0.0, NAN); // la bottom curve ne peut pas bouger non plus sinon pas de sens
   femElasticityAddBoundaryCondition(theProblem, "Bottom", DIRICHLET_Y, 0.0, NAN);
   femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);
 

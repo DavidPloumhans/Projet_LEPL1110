@@ -53,11 +53,13 @@ void femElasticityAssembleElements(femProblem *theProblem) {
       double dxdeta = 0.0;
       double dydxsi = 0.0;
       double dydeta = 0.0;
+      double xLoc = 0.0;
       for (i = 0; i < theSpace->n; i++) {
         dxdxsi += x[i] * dphidxsi[i];
         dxdeta += x[i] * dphideta[i];
         dydxsi += y[i] * dphidxsi[i];
         dydeta += y[i] * dphideta[i];
+        xLoc += x[i]*phi[i];  // x local
       }
       double jac = dxdxsi * dydeta - dxdeta * dydxsi;
       if (jac < 0.0 && iInteg == 0) {
@@ -66,32 +68,42 @@ void femElasticityAssembleElements(femProblem *theProblem) {
       }
       jac = fabs(jac);
 
-      for (i = 0; i < theSpace->n; i++) {
-        dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;
-        dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac;
+      for (i = 0; i < theSpace->n; i++) {  // Calcul des dérivées des fonctions de forme
+          dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;
+          dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac;
       }
+      
+      if (theProblem->planarStrainStress != AXISYM) {
+        // Cas non-axisymétrique
+        for (i = 0; i < theSpace->n; i++) {
+          for (j = 0; j < theSpace->n; j++) {
+            A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + dphidy[i] * c * dphidy[j]) * jac * weight;
+            A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + dphidy[i] * c * dphidx[j]) * jac * weight;
+            A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + dphidx[i] * c * dphidy[j]) * jac * weight;
+            A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + dphidx[i] * c * dphidx[j]) * jac * weight;
+          }
+        }
+        for (i = 0; i < theSpace->n; i++) {
+          B[mapX[i]] += phi[i] * gx * rho * jac * weight;
+          B[mapY[i]] += phi[i] * gy * rho * jac * weight;
+        }
+      } else if (theProblem->planarStrainStress == AXISYM) {
+      // Cas axisymétrique
       for (i = 0; i < theSpace->n; i++) {
-        for (j = 0; j < theSpace->n; j++) {
-          A[mapX[i]][mapX[j]] += (dphidx[i] * a * dphidx[j] + dphidy[i] * c * dphidy[j]) * jac * weight;
-          A[mapX[i]][mapY[j]] += (dphidx[i] * b * dphidy[j] + dphidy[i] * c * dphidx[j]) * jac * weight;
-          A[mapY[i]][mapX[j]] += (dphidy[i] * b * dphidx[j] + dphidx[i] * c * dphidy[j]) * jac * weight;
-          A[mapY[i]][mapY[j]] += (dphidy[i] * a * dphidy[j] + dphidx[i] * c * dphidx[j]) * jac * weight;
+        for(j = 0; j < theSpace->n; j++) {
+          A[mapX[i]][mapX[j]] += (dphidx[i] * a * xLoc * dphidx[j] + dphidy[i] * c * xLoc * dphidy[j] + phi[i] * ((b * dphidx[j]) + (a * phi[j] / xLoc)) + dphidx[i] * b * phi[j]) * jac * weight;
+          A[mapX[i]][mapY[j]] += (dphidx[i] * b * xLoc * dphidy[j] + dphidy[i] * c * xLoc * dphidx[j] + phi[i] * b * dphidy[j]) * jac * weight;
+          A[mapY[i]][mapX[j]] += (dphidy[i] * b * xLoc * dphidx[j] + dphidx[i] * c * xLoc * dphidy[j] + dphidy[i] * b * phi[j]) * jac * weight;
+          A[mapY[i]][mapY[j]] += (dphidy[i] * a * xLoc * dphidy[j] + dphidx[i] * c * xLoc * dphidx[j]) * jac * weight;
         }
       }
       for (i = 0; i < theSpace->n; i++) {
-        B[mapX[i]] += phi[i] * gx * rho * jac * weight;
-        B[mapY[i]] += phi[i] * gy * rho * jac * weight;
+        B[mapX[i]] += phi[i] * gx * rho * jac * weight * xLoc;
+        B[mapY[i]] += phi[i] * gy * rho * jac * weight * xLoc;
       }
+      } else {Error("Invalid PlanarStrainStress value. Must be PLANE_STRESS or PLANE_STRAIN or AXISYM\n");}
     }
   }
-  // affichage de la matrice A
-
-  for (i = 0; i < theSystem->size; i++) {
-    if (i < 200) {
-      // printf("A[%d][%d] = %f\n", i, i, A[i][i]);
-    }
-  }
-  printf("Nombre de Jacobiens negatifs : %d\n", count);
 }
 
 void femElasticityAssembleNeumann(femProblem *theProblem) {
@@ -130,27 +142,48 @@ void femElasticityAssembleNeumann(femProblem *theProblem) {
       
       double f_x = 0.0;
       double f_y = 0.0;
-      if (type == NEUMANN_X) {
+      if (type == NEUMANN_X) {  // f_y sera nul
         f_x = value;
       }
-      if (type == NEUMANN_Y) {
+      if (type == NEUMANN_Y) {  // f_x sera nul
         f_y = value;
       }
-
-      //
-      // A completer :-)
       // Attention, pour le normal tangent on calcule la normale (sortante) au SEGMENT, surtout PAS celle de constrainedNodes
       // Une petite aide pour le calcul de la normale :-)
-      // double nx =  ty / length;
-      // double ny = -tx / length;
+      // le triangle trigonométrique est donné dans le sens antihorlogique (d'où le - pour le ny) et la normale est sortante. La tangente est dans le sens anti-horlogique.
+      double nx =  ty / length;  // sinus de l'angle en x
+      double ny = -tx / length;  // - cosinus de l'angle en x
+      if (type == NEUMANN_N) {
+        f_x = value * nx;
+        f_y = value * ny;
+      } else if (type == NEUMANN_T) {
+        f_x = -value * ny;
+        f_y = value * nx;
+      }
 
-      for (iInteg = 0; iInteg < theRule->n; iInteg++) {
-        double xsi = theRule->xsi[iInteg];
-        double weight = theRule->weight[iInteg];
-        femDiscretePhi(theSpace, xsi, phi);
-        for (i = 0; i < theSpace->n; i++) {
-          B[2*map[i] + 0] += jac * weight * phi[i] * f_x;
-          B[2*map[i] + 1] += jac * weight * phi[i] * f_y;
+      if (theProblem->planarStrainStress != AXISYM) {
+        for (iInteg = 0; iInteg < theRule->n; iInteg++) {
+          double xsi = theRule->xsi[iInteg];
+          double weight = theRule->weight[iInteg];
+          femDiscretePhi(theSpace, xsi, phi);
+          for (i = 0; i < theSpace->n; i++) {
+            B[2*map[i] + 0] += jac * weight * phi[i] * f_x;
+            B[2*map[i] + 1] += jac * weight * phi[i] * f_y;
+          }
+        }
+      } else if (theProblem->planarStrainStress == AXISYM) {  // même chose mais facteur xLoc en plus
+        for (iInteg = 0; iInteg < theRule->n; iInteg++) {
+          int xLoc = 0.0;
+          double xsi = theRule->xsi[iInteg];
+          double weight = theRule->weight[iInteg];
+          femDiscretePhi(theSpace, xsi, phi);
+          for (i = 0; i < theSpace->n; i++) {
+            xLoc += x[i]*phi[i];  // x local
+          }
+          for (i = 0; i < theSpace->n; i++) {
+            B[2*map[i] + 0] += jac * weight * phi[i] * f_x * xLoc;  // j'en suis pas méga sur
+            B[2*map[i] + 1] += jac * weight * phi[i] * f_y * xLoc;
+          }
         }
       }
     }
@@ -214,5 +247,7 @@ double *femElasticitySolve(femProblem *theProblem) {
   memcpy(theProblem->soluce, soluce, theProblem->system->size * sizeof(double));
   return theProblem->soluce;
 }
+
+
 
 
