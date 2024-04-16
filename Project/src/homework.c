@@ -91,7 +91,7 @@ void femElasticityAssembleElements(femProblem *theProblem) {
       // printf("A[%d][%d] = %f\n", i, i, A[i][i]);
     }
   }
-  printf("Nombre de Jacobiens négatifs : %d\n", count);
+  printf("Nombre de Jacobiens negatifs : %d\n", count);
 }
 
 void femElasticityAssembleNeumann(femProblem *theProblem) {
@@ -210,9 +210,9 @@ double *femElasticitySolve(femProblem *theProblem) {
   femElasticityAssembleNeumann(theProblem);
   femElasticityApplyDirichlet(theProblem);
 
-  double *soluce = femFullSystemEliminate(theProblem->system);  // faudra changer
+  double *soluce = solve_cg(theProblem->system);  // solveur itératif des gradients conjugués
   memcpy(theProblem->soluce, soluce, theProblem->system->size * sizeof(double));
   return theProblem->soluce;
 }
 
-// les fonctions utiles au solveur bande
+

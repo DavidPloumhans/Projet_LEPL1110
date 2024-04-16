@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define ErrorScan(a) femErrorScan(a, __LINE__, __FILE__)
 #define Error(a) femError(a, __LINE__, __FILE__)
@@ -169,5 +170,21 @@ void femError(char *text, int line, char *file);
 void femErrorScan(int test, int line, char *file);
 void femErrorGmsh(int test, int line, char *file);
 void femWarning(char *text, int line, char *file);
+
+typedef struct sparseMatrix {
+  int size;
+  int nnz;
+  int *col;
+  int *rptr;
+  double *val;
+} sparseMatrix;
+
+void sparseMatrixFree(sparseMatrix *sp);
+sparseMatrix* to_sparse(double **A, int size);
+static inline void spmv(const sparseMatrix* sp, const double* x, double* y);
+static inline void residual(const sparseMatrix* sp, const double* x, const double* b, double* r);
+static inline double dot(const double* x, const double* y, int size);
+static inline void axpy(double* x, const double* y, double a, int size);
+double *solve_cg(femFullSystem *mySystem);
 
 #endif
