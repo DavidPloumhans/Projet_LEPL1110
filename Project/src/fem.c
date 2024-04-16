@@ -1087,3 +1087,87 @@ double *solve_cg(femFullSystem *mySystem) {
 
   return x;
 }
+void femFullSystemConstrainDirichlet_N(femFullSystem *mySystem, int myNode, double myValue, double nx, double ny) {
+  double **A, *B;
+  int i, size;
+  //MyValue correspond à la valeur de la contrainte
+
+  A = mySystem->A;
+  B = mySystem->B;
+  size = mySystem->size;
+  
+  double tx = -ny;
+  double ty = nx;
+  double b_t = tx*B[2*myNode] + ty*B[2*myNode+1];
+  double a_tn = nx*(tx*A[2*myNode][2*myNode]+ty*A[2*myNode+1][2*myNode]) + ny*(tx*A[2*myNode][2*myNode+1]+ty*A[2*myNode+1][2*myNode+1]);
+  double a_tt = tx*(tx*A[2*myNode][2*myNode]+ty*A[2*myNode+1][2*myNode]) + ty*(tx*A[2*myNode][2*myNode+1]+ty*A[2*myNode+1][2*myNode+1]);
+  //Modification des lignes et des colonnes
+  for(int i = 0; i < 2*myNode; i++) {
+    A[i][2*myNode] = tx*(A[i][2*myNode]*tx + A[i][2*myNode+1]*ty);
+    A[i][2*myNode+1] = ty*(A[i][2*myNode]*tx + A[i][2*myNode+1]*ty);
+    B[i] -= myValue*A[i][2*myNode];
+  }
+  for (i=2*myNode+2; i < size; i++) {
+    A[i][2*myNode] = tx*(A[i][2*myNode]*tx + A[i][2*myNode+1]*ty);
+    A[i][2*myNode+1] = ty*(A[i][2*myNode]*tx + A[i][2*myNode+1]*ty);
+    B[i] -= myValue*A[i][2*myNode];
+  }
+  for (i = 0; i < 2*myNode; i++) {
+      // Prendre les deux lignes à modifier
+      A[2*myNode][i] = tx*(A[2*myNode][i]*tx + A[2*myNode+1][i]*ty);
+      A[2*myNode+1][i] = ty*(A[2*myNode][i]*tx + A[2*myNode+1][i]*ty);
+    }
+  for(i = 2*myNode+2; i < size; i++) {
+    A[2*myNode][i] = tx*(A[2*myNode][i]*tx + A[2*myNode+1][i]*ty);
+    A[2*myNode+1][i] = ty*(A[2*myNode][i]*tx + A[2*myNode+1][i]*ty);
+  }
+  // Nous allons maintenant effectuer les opérations sur la petite matrice 
+  // 2x2
+  A[2*myNode][2*myNode] = nx*nx + tx*tx*a_tt;
+  A[2*myNode][2*myNode+1] = nx*ny + tx*ty*a_tt;
+  A[2*myNode+1][2*myNode] = nx*ny + ty*tx*a_tt;
+  A[2*myNode+1][2*myNode+1] = ny*ny + ty*ty*a_tt;
+  B[2*myNode] = myValue*nx + tx*(b_t - myValue*a_tn);
+  B[2*myNode+1] = myValue*ny + ty*(b_t - myValue*a_tn); 
+}
+
+void femFullSystemConstrainDirichlet_T(femFullSystem *mySystem, int myNode, double myValue, double nx, double ny) {
+
+  double **A, *B;
+  int i, size;
+  //Myvalue correspond à la valeur de la contrainte
+  double tx = -ny;
+  double ty = nx;
+  double b_n = nx*B[2*myNode] + ny*B[2*myNode+1];
+  double a_tn = nx*(tx*A[2*myNode][2*myNode]+ty*A[2*myNode+1][2*myNode]) + ny*(tx*A[2*myNode][2*myNode+1]+ty*A[2*myNode+1][2*myNode+1]);
+  double a_nn = nx*(nx*A[2*myNode][2*myNode]+ny*A[2*myNode+1][2*myNode]) + ny*(nx*A[2*myNode][2*myNode+1]+ny*A[2*myNode+1][2*myNode+1]);
+  //Modification des lignes et des colonnes
+  for(int i = 0; i < 2*myNode; i++) {
+    A[i][2*myNode] = nx*(A[i][2*myNode]*nx + A[i][2*myNode+1]*ny);
+    A[i][2*myNode+1] = ny*(A[i][2*myNode]*nx + A[i][2*myNode+1]*ny);
+    B[i] -= myValue*A[i][2*myNode+1];
+  }
+  for (i=2*myNode+2; i < size; i++) {
+    A[i][2*myNode] = tx*(A[i][2*myNode]*tx + A[i][2*myNode+1]*ty);
+    A[i][2*myNode+1] = ty*(A[i][2*myNode]*tx + A[i][2*myNode+1]*ty);
+    B[i] -= myValue*A[i][2*myNode+1];
+  }
+  for (i = 0; i < 2*myNode; i++) {
+      // Prendre les deux lignes à modifier
+      A[2*myNode][i] = nx*(A[2*myNode][i]*nx + A[2*myNode+1][i]*ny);
+      A[2*myNode+1][i] = ny*(A[2*myNode][i]*nx + A[2*myNode+1][i]*ny);
+    }
+  for(i = 2*myNode+2; i < size; i++) {
+    A[2*myNode][i] = nx*(A[2*myNode][i]*nx + A[2*myNode+1][i]*ny);
+    A[2*myNode+1][i] = ny*(A[2*myNode][i]*nx + A[2*myNode+1][i]*ny);
+  }
+  // Nous allons maintenant effectuer les opérations sur la petite matrice 
+  // 2x2
+  A[2*myNode][2*myNode] = a_nn*nx*nx + tx*tx;
+  A[2*myNode][2*myNode+1] = a_nn*nx*ny + tx*ty;
+  A[2*myNode+1][2*myNode] = a_nn*nx*ny + ty*tx;
+  A[2*myNode+1][2*myNode+1] = a_nn*ny*ny + ty*ty;
+  B[2*myNode] = myValue*tx + nx*(b_n - myValue*a_tn);
+  B[2*myNode+1] = myValue*ty + ny*(b_n - myValue*a_tn); 
+}
+
