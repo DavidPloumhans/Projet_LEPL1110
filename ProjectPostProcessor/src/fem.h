@@ -175,6 +175,8 @@ void femWarning(char *text, int line, char *file);
 void femElasticityAssembleElementsE_XX(femProblem *theProblem, double *E_XX);
 void femElasticityAssembleElementsE_YY(femProblem *theProblem, double *E_YY);
 void femElasticityAssembleElementsE_XY(femProblem *theProblem, double *E_XY);
+void femElasticityAssembleElementsE_ThetaTheta(femProblem *theProblem, double *E_ThetaTheta);
+
 
 typedef struct sparseMatrix {
   int size;

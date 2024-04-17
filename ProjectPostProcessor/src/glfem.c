@@ -362,6 +362,7 @@ void glfemPlotField(femMesh *theMesh, double *u) {
   double uLoc[4];
   double uMax = femMax(u, theNodes->nNodes);
   double uMin = femMin(u, theNodes->nNodes);
+  // printf("uMin = %f uMax = %f\n", uMin, uMax);
   int nLocalNode = theMesh->nLocalNode;
 
   for (i = 0; i < theMesh->nElem; ++i) {

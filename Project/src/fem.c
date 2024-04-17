@@ -548,6 +548,8 @@ void femElasticityFree(femProblem *theProblem) {
   femFullSystemFree(theProblem->system);
   femIntegrationFree(theProblem->rule);
   femDiscreteFree(theProblem->space);
+  femDiscreteFree(theProblem->spaceEdge);  // free à rajouter
+  femIntegrationFree(theProblem->ruleEdge);  // free à rajouter
   for (int i = 0; i < theProblem->nBoundaryConditions; i++)
     free(theProblem->conditions[i]);
   free(theProblem->conditions);
