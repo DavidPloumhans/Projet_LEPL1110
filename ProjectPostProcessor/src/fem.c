@@ -36,6 +36,7 @@ void geoFree(void) {
   if (theGeometry.theNodes) {
     free(theGeometry.theNodes->X);
     free(theGeometry.theNodes->Y);
+    free(theGeometry.theNodes->number);
     free(theGeometry.theNodes);
   }
   if (theGeometry.theElements) {
@@ -379,8 +380,9 @@ void geoMeshRead(const char *filename) {
   ErrorScan(fscanf(file, "Number of nodes %d \n", &theNodes->nNodes));
   theNodes->X = malloc(sizeof(double) * (theNodes->nNodes));
   theNodes->Y = malloc(sizeof(double) * (theNodes->nNodes));
+  theNodes->number = malloc(sizeof(int) * (theNodes->nNodes));
   for (int i = 0; i < theNodes->nNodes; i++) {
-    ErrorScan(fscanf(file, "%d : %le %le \n", &trash, &theNodes->X[i], &theNodes->Y[i]));
+    ErrorScan(fscanf(file, "%d : %le %le \n", &theNodes->number[i], &theNodes->X[i], &theNodes->Y[i]));
   }
 
   femMesh *theEdges = malloc(sizeof(femMesh));
@@ -1635,4 +1637,84 @@ double *solve_cg(femFullSystem *mySystem) {
   free(Ap);
 
   return x;
+}
+
+double max(double a,double b,double c){
+    double res;
+    if(fabs(a) > fabs(b)){
+        res = a;
+    }
+    if(fabs(c) > res){
+        res = c;
+    }
+    return res;
+}
+
+
+double lev(double a[3][3],double y[3][1],double x[3][1]){
+
+    y[0][0] = (a[0][0] * x[0][0]) + (a[0][1] * x[1][0]) + (a[0][2] * x[2][0]);
+    y[1][0] = (a[1][0] * x[0][0]) + (a[1][1] * x[1][0]) + (a[1][2] * x[2][0]);
+    y[2][0] = (a[2][0] * x[0][0]) + (a[2][1] * x[1][0]) + (a[2][2] * x[2][0]);
+    
+    
+    double l1 = max(y[0][0],y[1][0],y[2][0]);
+
+    for(int i = 0;i<3;i++){
+        x[i][0] = y[i][0] / l1;
+    }
+
+    int maxIter = 10000;
+    int count = 0;
+    while(count < maxIter){
+        y[0][0] = (a[0][0] * x[0][0]) + (a[0][1] * x[1][0]) + (a[0][2] * x[2][0]);
+        y[1][0] = (a[1][0] * x[0][0]) + (a[1][1] * x[1][0]) + (a[1][2] * x[2][0]);
+        y[2][0] = (a[2][0] * x[0][0]) + (a[2][1] * x[1][0]) + (a[2][2] * x[2][0]);
+
+        double l2 = max(y[0][0],y[1][0],y[2][0]);
+
+        for(int i = 0;i<3;i++){
+            x[i][0] = y[i][0] / l2;
+        }
+
+        double error = fabs(l2 - l1) / fabs(l2);
+
+        l1 = l2;
+
+        if(error < 0.0001){
+            return l1;
+        }
+        count++;
+    }
+    return 0;  // pas ouf mais devrait résoudre le problème
+}
+
+
+void calculateEigenValues(double a[3][3], double eigenvalues[3]) {
+  // src : https://github.com/b-abhinay07/ICS_CP_Attagallu/blob/main/B22AI012_B22EE004_B23EE1049_B23CS1010.c
+  double y[3][1];
+  double x[3][1] = {{1.0},{1.0},{1.0}};
+
+  double largesteigenvalue = lev(a,y,x);
+
+  double sum = (a[0][0] + a[1][1] + a[2][2]) - largesteigenvalue;
+  double product = ((a[0][0] * a[1][1] * a[2][2]) - (a[0][0] * a[2][1] * 
+  a[1][2]) - (a[0][1] * a[1][0] * a[2][2]) + (a[0][1] * a[2][0] * a[1][2]) + 
+  (a[0][2] * a[1][0] * a[2][1]) - (a[0][2] * a[2][0] * a[1][1]))/largesteigenvalue;
+  double dis = (sum * sum) - (4 * product);
+  double l2 = (sum + sqrt(dis)) / 2;
+  double l3 = (sum - sqrt(dis)) / 2;
+  if (largesteigenvalue > l2) {
+    eigenvalues[0] = largesteigenvalue;
+    eigenvalues[1] = l2;
+    eigenvalues[2] = l3;
+  } else if (largesteigenvalue < l3) {
+    eigenvalues[0] = l2;
+    eigenvalues[1] = l3;
+    eigenvalues[2] = largesteigenvalue;
+  } else {
+    eigenvalues[0] = l2;
+    eigenvalues[1] = largesteigenvalue;
+    eigenvalues[2] = l3;
+  }
 }

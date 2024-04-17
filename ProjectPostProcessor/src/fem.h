@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include<stdbool.h>
 
 #define ErrorScan(a) femErrorScan(a, __LINE__, __FILE__)
 #define ErrorGmsh(a) femErrorGmsh(a, __LINE__, __FILE__)
@@ -33,6 +34,7 @@ typedef struct {
   int nNodes;
   double *X;
   double *Y;
+  int *number;
 } femNodes;
 
 typedef struct {
@@ -194,4 +196,9 @@ static inline void residual(const sparseMatrix* sp, const double* x, const doubl
 static inline double dot(const double* x, const double* y, int size);
 static inline void axpy(double* x, const double* y, double a, int size);
 double *solve_cg(femFullSystem *mySystem);
+
+double max(double a,double b,double c);
+double lev(double a[3][3], double y[3][1], double x[3][1]);
+void calculateEigenValues(double a[3][3], double eigenvalues[3]);
+
 #endif

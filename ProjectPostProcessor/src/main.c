@@ -48,6 +48,7 @@ int main(void) {
   double *sigma_ThetaTheta = malloc(n * sizeof(double));
   double *sigma_YY = malloc(n * sizeof(double));
   double *sigma_XY = malloc(n * sizeof(double));
+  double *eigen_values = malloc(3 * n * sizeof(double));  // les valeurs propres
   double A = theProblem->A;
   double B = theProblem->B;
   double C = theProblem->C;
@@ -57,6 +58,11 @@ int main(void) {
     sigma_YY[i] = A * E_YY[i] + B * (E_XX[i] + E_ThetaTheta[i]);
     sigma_XY[i] = 2 * C * E_XY[i];
   }
+  for (int i = 0; i < n; i++) {
+    // calcul des valeurs propres
+    double sigma[3][3] = {{sigma_XX[i], 0, sigma_XY[i]}, {0, sigma_ThetaTheta[i], 0}, {sigma_XY[i], 0, sigma_YY[i]}};  // tenseur des contraintes
+    calculateEigenValues(sigma, &eigen_values[3 * i]);  // remplit eigen_values[3*i], eigen_values[3*i+1], eigen_values[3*i+2]
+  }
 
   // calcul de Von Mises
   // formule générale (voir Wikipédia)
@@ -64,24 +70,63 @@ int main(void) {
   for (int i = 0; i < n; i++) {
     sigma_VM[i] = sqrt(0.5 * (pow(sigma_XX[i] - sigma_ThetaTheta[i], 2) + pow(sigma_ThetaTheta[i] - sigma_YY[i], 2) + pow(sigma_YY[i] - sigma_XX[i], 2) + 3 * (pow(sigma_XY[i], 2))));
   }
-  // Affichage de quelques valeurs pour s'assurer du bon sens de la réponse
-  for (int i=0; i < 5; i++) {
-    printf("E_XX[%d] = %f\n", i, E_XX[i]);
-    printf("E_YY[%d] = %f\n", i, E_YY[i]);
-    printf("E_XY[%d] = %f\n", i, E_XY[i]);
-    printf("E_ThetaTheta[%d] = %f\n", i, E_ThetaTheta[i]);
-    printf("sigma_XX[%d] = %f\n", i, sigma_XX[i]);
-    printf("sigma_ThetaTheta[%d] = %f\n", i, sigma_ThetaTheta[i]);
-    printf("sigma_YY[%d] = %f\n", i, sigma_YY[i]);
-    printf("sigma_XY[%d] = %f\n", i, sigma_XY[i]);
-    printf("sigma_VM[%d] = %f\n", i, sigma_VM[i]);
-  }
-
-
   double vonMisesMin = femMin(sigma_VM, n);
   double vonMisesMax = femMax(sigma_VM, n);
   printf(" ==== Minimum Von Mises stress      : %14.7e \n", vonMisesMin);
   printf(" ==== Maximum Von Mises stress      : %14.7e \n", vonMisesMax);
+
+  // calcul de Coulomb-Mohr
+  double *CM = malloc(n * sizeof(double));  // 0 ou 1 selon si la contrainte est en dessous ou au dessus de la limite de Coulomb-Mohr.
+  for (int i = 0; i < n; i++) {
+    // droite de coulomb mohr en ax + by + c = 0
+    double a = 1.314;
+    double b = 1.0;
+    double c = -674073802.0;
+    double xA = 0.5 * (eigen_values[3 * i] + eigen_values[3 * i + 2]);  // centre du cercle de Mohr (entre sigma1 et sigma3)
+    double rMohr = 0.5 * abs((eigen_values[3 * i] - eigen_values[3 * i + 2]));  // rayon du cercle de Mohr
+    double dist = abs(a * xA + c) / sqrt(a * a + b * b);  // distance entre le centre du cercle et la droite de Mohr
+    if (dist < rMohr) {
+      CM[i] = 1.0 * (rMohr - dist);  // satisfait pas la condition de Mohr
+    } else {
+      CM[i] = 0.0;  // satisfait la condition de Mohr
+    }
+    // cas où le solveur n'a pas convergé
+    if (eigen_values[3 * i] == 0 ) {
+      CM[i] = 0.0;
+    }
+    if (eigen_values[3 * i + 2] == 0 ) {
+      CM[i] = 0.0;
+    }
+  }
+
+  // Affichage de quelques valeurs pour s'assurer du bon sens de la réponse
+  /*
+  for (int i=0; i < 6; i++) {
+    //printf("E_XX[%d] = %f\n", i, E_XX[i]);
+    //printf("E_YY[%d] = %f\n", i, E_YY[i]);
+    //printf("E_XY[%d] = %f\n", i, E_XY[i]);
+    //printf("E_ThetaTheta[%d] = %f\n", i, E_ThetaTheta[i]);
+    printf("sigma_XX[%d] = %f\n", i, sigma_XX[i]);
+    printf("sigma_ThetaTheta[%d] = %f\n", i, sigma_ThetaTheta[i]);
+    printf("sigma_YY[%d] = %f\n", i, sigma_YY[i]);
+    printf("sigma_XY[%d] = %f\n", i, sigma_XY[i]);
+    printf("eigen_values[%d][0] = %f\n", i, eigen_values[3 * i]);
+    printf("eigen_values[%d][1] = %f\n", i, eigen_values[3 * i + 1]);
+    printf("eigen_values[%d][2] = %f\n", i, eigen_values[3 * i + 2]);
+    printf("sigma_VM[%d] = %f\n", i, sigma_VM[i]);
+  }
+  */
+
+  // valeur de la contrainte selon ZZ sur le bas
+  int number[8] = {145, 146, 147, 30, 40, 60, 100, 135};  // noeuds appartennant au domaine "Bottom"  (j'ai été voir dans le fichier mesh.txt)
+  for (int i = 0; i < 8; i++) {
+    printf("sigma_YY[%d] = %f\n", number[i], sigma_YY[number[i]]);
+  }
+  
+  // je veux récupérer les noeuds dans ce domain
+  
+  
+
 
   //
   //  -2- Deformation du maillage pour le plot final
@@ -130,8 +175,14 @@ int main(void) {
     if (glfwGetKey(window, 'V') == GLFW_PRESS) {
       mode = 1;
     }
-    if (glfwGetKey(window, 'S') == GLFW_PRESS) {
+    if (glfwGetKey(window, 'Q') == GLFW_PRESS) {  // Von mises
       mode = 2;
+    }
+    if (glfwGetKey(window, 'W') == GLFW_PRESS) {  // ZZ stress
+      mode = 3;
+    }
+    if (glfwGetKey(window, 'R') == GLFW_PRESS) {  // Coulomb-Mohr respecté ou non
+      mode = 4;
     }
     if (glfwGetKey(window, 'N') == GLFW_PRESS && freezingButton == FALSE) {
       domain++;
@@ -145,7 +196,7 @@ int main(void) {
     if (mode == 1) {
       glfemPlotField(theGeometry->theElements, normDisplacement);
       glfemPlotMesh(theGeometry->theElements);
-      sprintf(theMessage, "Number of elements : %d ", theGeometry->theElements->nElem);
+      sprintf(theMessage, "Elastic deformation   Number of elements : %d ", theGeometry->theElements->nElem);
       glColor3f(1.0, 0.0, 0.0);
       glfemMessage(theMessage);
     }
@@ -154,6 +205,22 @@ int main(void) {
       glfemPlotField(theGeometry->theElements, sigma_VM);
       glfemPlotMesh(theGeometry->theElements);
       sprintf(theMessage, "Von mises max : %f MPa", vonMisesMax / 1.e6);
+      glColor3f(1.0, 0.0, 0.0);
+      glfemMessage(theMessage);
+    }
+    if (mode == 3) // affichage de sigma_YY (ZZ stress)
+    {
+      glfemPlotField(theGeometry->theElements, sigma_YY);
+      glfemPlotMesh(theGeometry->theElements);
+      sprintf(theMessage, "sigma_ZZ max : %f MPa", femMax(sigma_YY, n) / 1.e6);
+      glColor3f(1.0, 0.0, 0.0);
+      glfemMessage(theMessage);
+    }
+    if (mode == 4) // affichage de Coulomb-Mohr
+    {
+      glfemPlotField(theGeometry->theElements, CM);
+      glfemPlotMesh(theGeometry->theElements);
+      sprintf(theMessage, "Coulomb-Mohr respecté ou non ?");
       glColor3f(1.0, 0.0, 0.0);
       glfemMessage(theMessage);
     }
@@ -180,7 +247,9 @@ int main(void) {
   free(sigma_YY);
   free(sigma_XY);
   free(sigma_ThetaTheta);
+  free(eigen_values);
   free(sigma_VM);
+  free(CM);
   femElasticityFree(theProblem);
   geoFree();
   glfwTerminate();
