@@ -172,4 +172,24 @@ void femErrorScan(int test, int line, char *file);
 void femErrorGmsh(int test, int line, char *file);
 void femWarning(char *text, int line, char *file);
 
+void femElasticityAssembleElementsE_XX(femProblem *theProblem, double *E_XX);
+void femElasticityAssembleElementsE_YY(femProblem *theProblem, double *E_YY);
+void femElasticityAssembleElementsE_XY(femProblem *theProblem, double *E_XY);
+
+typedef struct sparseMatrix {
+  int size;
+  int nnz;
+  int *col;
+  int *rptr;
+  double *val;
+} sparseMatrix;
+
+
+void sparseMatrixFree(sparseMatrix *sp);
+sparseMatrix* to_sparse(double **A, int size);
+static inline void spmv(const sparseMatrix* sp, const double* x, double* y);
+static inline void residual(const sparseMatrix* sp, const double* x, const double* b, double* r);
+static inline double dot(const double* x, const double* y, int size);
+static inline void axpy(double* x, const double* y, double a, int size);
+double *solve_cg(femFullSystem *mySystem);
 #endif

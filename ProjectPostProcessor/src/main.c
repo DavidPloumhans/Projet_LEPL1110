@@ -30,13 +30,30 @@ int main(void) {
   femSolutiondRead(2*n,theSoluce, "../data/UV.txt");
   femElasticityPrint(theProblem);
 
+  double *E_XX = malloc(n * sizeof(double));
+  double *E_YY = malloc(n * sizeof(double));
+  double *E_XY = malloc(n * sizeof(double));
+  femElasticityAssembleElementsE_XX(theProblem, E_XX);
+  femElasticityAssembleElementsE_YY(theProblem, E_YY);
+  femElasticityAssembleElementsE_XY(theProblem, E_XY);
+
+  // pas sur du calcul des contraintes
+  double *sigma_XX = malloc(n * sizeof(double));
+  double *sigma_YY = malloc(n * sizeof(double));
+  double *sigma_XY = malloc(n * sizeof(double));
+  for (int i = 0; i < n; i++) {
+    sigma_XX[i] = theProblem->A * E_XX[i] + theProblem->B * E_YY[i];
+    sigma_YY[i] = theProblem->A * E_YY[i] + theProblem->B * E_XX[i];
+    sigma_XY[i] = 2*theProblem->C * E_XY[i];
+  }
+  double *sigma_VM = malloc(n * sizeof(double));  // Von Mises stress
   //
   //  -2- Deformation du maillage pour le plot final
   //      Creation du champ de la norme du deplacement
   //
 
   femNodes *theNodes = theGeometry->theNodes;
-  double deformationFactor = 1e2;  // change le facteur de déformation pour ne pas avoir quelque chose d'absurde
+  double deformationFactor = 1e1;  // change le facteur de déformation pour ne pas avoir quelque chose d'absurde
   double *normDisplacement = malloc(theNodes->nNodes * sizeof(double));
 
   for (int i = 0; i < n; i++) {
@@ -108,6 +125,12 @@ int main(void) {
   // Check if the ESC key was pressed or the window was closed
 
   free(normDisplacement);
+  free(E_XX);
+  free(E_YY);
+  free(E_XY);
+  free(sigma_XX);
+  free(sigma_YY);
+  free(sigma_XY);
   femElasticityFree(theProblem);
   geoFree();
   glfwTerminate();
