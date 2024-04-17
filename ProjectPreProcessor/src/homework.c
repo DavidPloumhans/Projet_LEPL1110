@@ -35,26 +35,16 @@ double geoSize(double x, double y){
     double r_first_arc = r;
     //coordonnée du centre de notre 2eme arc de cercle en bas
     double x_second_arc = (l2/2.0)-r;
-    double y_second_arc = h2/6.3;
-    double r_second_arc = r;
+    double y_second_arc = l2/4.0;
+    double r_second_arc = l2/4.0;
     //Point en plus sur le côté de notre maillage 
     double x_side = 0.0;
     double y_side = h2/5.0;
     //Paramètres de notre maille les 2 arcs ont exactement les mêmes paramètres à l'exception de leur position
     double h = ((l2/2.0)+l1)*0.3;
     double h_circle_arc = h*0.2;
-    double dArc_1 = h*1.0;
-    double dArc_2 = h*4.0;
     double h_Notch = h*0.05;
-    double dNotch = h*4.0; 
-
-
-
-    //Coéfficients de la fonction de la taille de la maille pour l'arc
-    double a0 = -2*(h-h_circle_arc)/(dArc_1*dArc_1*dArc_1);
-    double b0 = 3*(h-h_circle_arc)/(dArc_1*dArc_1);
-    double c0 = 0;
-    double d00 = h_circle_arc;
+    double dNotch = h*3.0; 
     //Coéfficients de la deuxieme fonction (Notch)
     double a2 = -2*(h-h_Notch)/(dNotch*dNotch*dNotch);
     double b2 = 3*(h-h_Notch)/(dNotch*dNotch);
@@ -62,59 +52,17 @@ double geoSize(double x, double y){
     double d02 = h_Notch; 
    
 
-
     //Calcul de la distance entre le point et les formes
-    double dist_arc_1 = dist(x, y, x_first_arc, y_first_arc)-r_first_arc;
     double dist_notch = dist(x, y, xNotch, yNotch)-rNotch;
-    double dist_arc_2 = dist(x, y, x_second_arc, y_second_arc)-r_second_arc;
-    double dist_side = dist(x, y, x_side, y_side)-r;
-    /*
-    if (dist_arc_1 < dArc_1 && dist_notch > dNotch) {
-        return a0*dist_arc_1*dist_arc_1*dist_arc_1 + b0*dist_arc_1*dist_arc_1 + c0*dist_arc_1 + d00;
+    double to_return = h*0.45;
+    if (dist_notch < dNotch) {
+        to_return = fmin((a2*dist_notch*dist_notch*dist_notch + b2*dist_notch*dist_notch + c2*dist_notch + d02)*1.5, to_return);
     }
-    if (dist_notch < dNotch && dist_arc_1 > dArc_1) {
-        return a2*dist_notch*dist_notch*dist_notch + b2*dist_notch*dist_notch + c2*dist_notch + d02;
-    }
-    if (dist_arc_1<dArc_1 && dist_notch<dNotch) {
-        double value_1 = a0*dist_arc_1*dist_arc_1*dist_arc_1 + b0*dist_arc_1*dist_arc_1 + c0*dist_arc_1 + d00;
-        double value_2 = a2*dist_notch*dist_notch*dist_notch + b2*dist_notch*dist_notch + c2*dist_notch + d02;
-        return fmin(value_1, value_2);
-    }
-    if (dist_arc_2 < dArc_2 && dist_notch > dNotch) {
-        return a0*dist_arc_2*dist_arc_2*dist_arc_2 + b0*dist_arc_2*dist_arc_2 + c0*dist_arc_2 + d00;
-    }
-    if (dist_notch < dNotch && dist_arc_2 > dArc_2) {
-        return a2*dist_notch*dist_notch*dist_notch + b2*dist_notch*dist_notch + c2*dist_notch + d02;
-    }
-    if(dist_arc_2<dArc_2 && dist_notch<dNotch) {
-        double value_1 = a0*dist_arc_2*dist_arc_2*dist_arc_2 + b0*dist_arc_2*dist_arc_2 + c0*dist_arc_2 + d00;
-        double value_2 = a2*dist_notch*dist_notch*dist_notch + b2*dist_notch*dist_notch + c2*dist_notch + d02;
-        return fmin(value_1, value_2);
-    }
-    return h;
-    /*
-    if (distl < refDist) {
-        double a = 2.0 * (hstar - hd) / (refDist * refDist * refDist);
-        double b = 3.0 * (hd - hstar) / (refDist * refDist);
-        double d = hd;
-        toReturn = a * distl * distl * distl + b * distl * distl + d;
-    }
-    else if (distr < refDist) {
-        double a = 2.0 * (hstar - hd) / (refDist * refDist * refDist);
-        double b = 3.0 * (hd - hstar) / (refDist * refDist);
-        double d = hd;
-        toReturn = a * distr * distr * distr + b * 
-        distr * distr + d;
-    }
-    if (y < h2) {
-        toReturn = fmin(toReturn, hd * y * y + 0.03);
-    }
-    */
 
-    // printf("toReturn = %f\n", toReturn);
-    // toReturn = hstar;
-    return h/8.0;
-
+    if (y<h2) {
+        to_return = fmin(to_return, (h * 0.20 * (0.3*y+0.3))*1.5);
+    }
+return to_return;
 }
 
 
