@@ -187,4 +187,7 @@ static inline double dot(const double* x, const double* y, int size);
 static inline void axpy(double* x, const double* y, double a, int size);
 double *solve_cg(femFullSystem *mySystem);
 
+void femFullSystemConstrainDirichlet_N(femFullSystem *mySystem, int myNode, double myValue, double nx, double ny);
+void femFullSystemConstrainDirichlet_T(femFullSystem *mySystem, int myNode, double myValue, double nx, double ny);
+
 #endif

@@ -220,20 +220,21 @@ void femElasticityApplyDirichlet(femProblem *theProblem) {
       double value = theConstrainedNode->value1;
       double nx = theConstrainedNode->nx;
       double ny = theConstrainedNode->ny;
-      // A completer :-)
+      femFullSystemConstrainDirichlet_N(theSystem, node, value, nx, ny);
     }
     if (type == DIRICHLET_T) {
       double value = theConstrainedNode->value1;
       double nx = theConstrainedNode->nx;
       double ny = theConstrainedNode->ny;
-      // A completer :-)
+      femFullSystemConstrainDirichlet_T(theSystem, node, value, nx, ny);
     }
     if (type == DIRICHLET_NT) {
       double value_n = theConstrainedNode->value1;
       double value_t = theConstrainedNode->value2;
       double nx = theConstrainedNode->nx;
       double ny = theConstrainedNode->ny;
-      // A completer :-)
+      femFullSystemConstrainDirichlet_N(theSystem, node, value_n, nx, ny);
+      femFullSystemConstrainDirichlet_T(theSystem, node, value_t, nx, ny);
     }
   }
 }
