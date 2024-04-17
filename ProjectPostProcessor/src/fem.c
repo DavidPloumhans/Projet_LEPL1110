@@ -1199,3 +1199,253 @@ void femWarning(char *text, int line, char *file) {
   printf("\n  Warning in %s:%d at line %d : \n  %s\n", file, line, line, text);
   printf("--------------------------------------------------------------------- Yek Yek !! \n\n");
 }
+void femElasticityAssembleElementsE_XX(femProblem *theProblem, double *E_XX) {
+
+  femFullSystem *theSystem = theProblem->system;
+  femFullSystemInit(theSystem);
+  femIntegration *theRule = theProblem->rule;
+  femDiscrete *theSpace = theProblem->space;
+  femGeo *theGeometry = theProblem->geometry;
+  femNodes *theNodes = theGeometry->theNodes;
+  femMesh *theMesh = theGeometry->theElements;
+  double x[4], y[4], phi[4], dphidxsi[4], dphideta[4], dphidx[4], dphidy[4];
+  int iElem, iInteg, iEdge, i, j, d, map[4], mapX[4], mapY[4];
+  int nLocal = theMesh->nLocalNode;
+  double a = theProblem->A;
+  double b = theProblem->B;
+  double c = theProblem->C;
+  double rho = theProblem->rho;
+  double gx = theProblem->gx;
+  double gy = theProblem->gy;
+  double **A = theSystem->A;
+  double *B = theSystem->B;
+  int count = 0;
+  for (iElem = 0; iElem < theMesh->nElem; iElem++) {
+    for (j = 0; j < nLocal; j++) {
+      map[j] = theMesh->elem[iElem * nLocal + j];
+      mapX[j] = 2 * map[j];
+      mapY[j] = 2 * map[j] + 1;
+      x[j] = theNodes->X[map[j]];
+      y[j] = theNodes->Y[map[j]];
+    }
+    
+    /*
+    printf("Element %d\n", iElem);
+    printf("X[0] = %f, Y[0] = %f\n", x[0], y[0]);
+    printf("X[1] = %f, Y[1] = %f\n", x[1], y[1]);
+    printf("X[2] = %f, Y[2] = %f\n", x[2], y[2]);
+    */
+   
+    for (iInteg = 0; iInteg < theRule->n; iInteg++) {
+      
+      double xsi = theRule->xsi[iInteg];
+      double eta = theRule->eta[iInteg];
+      double weight = theRule->weight[iInteg];
+      femDiscretePhi2(theSpace, xsi, eta, phi);
+      femDiscreteDphi2(theSpace, xsi, eta, dphidxsi, dphideta);
+
+      double dxdxsi = 0.0;
+      double dxdeta = 0.0;
+      double dydxsi = 0.0;
+      double dydeta = 0.0;
+      for (i = 0; i < theSpace->n; i++) {
+        dxdxsi += x[i] * dphidxsi[i];
+        dxdeta += x[i] * dphideta[i];
+        dydxsi += y[i] * dphidxsi[i];
+        dydeta += y[i] * dphideta[i];
+      }
+      double jac = dxdxsi * dydeta - dxdeta * dydxsi;
+      if (jac < 0.0 && iInteg == 0) {
+        printf("Negative jacobian! Your mesh is oriented in reverse. The normals will be wrong\n");
+        count++;
+      }
+      jac = fabs(jac);
+      double dudx = 0;
+      for (i = 0; i < theSpace->n; i++) {
+        dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;
+        dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac;
+        dudx += dphidx[i] * theProblem->soluce[2*map[i]];
+      }
+      for (i = 0; i < theSpace->n; i++) {
+        for (j = 0; j < theSpace->n; j++) {
+          A[map[i]][map[j]] += phi[i]*phi[j]*weight*jac;
+        }
+      }
+      for (i = 0; i < theSpace->n; i++) {
+        B[map[i]] += phi[i]* dudx * jac * weight;
+      }
+    }
+  }
+double *solution = femFullSystemEliminate(theSystem);
+memcpy(E_XX, solution, sizeof(double) * theNodes->nNodes);
+  printf("Number of elements with negative jacobian: %d\n", count);
+}
+
+void femElasticityAssembleElementsE_YY(femProblem *theProblem, double *E_YY) {
+
+  femFullSystem *theSystem = theProblem->system;
+  femFullSystemInit(theSystem);
+  femIntegration *theRule = theProblem->rule;
+  femDiscrete *theSpace = theProblem->space;
+  femGeo *theGeometry = theProblem->geometry;
+  femNodes *theNodes = theGeometry->theNodes;
+  femMesh *theMesh = theGeometry->theElements;
+  double x[4], y[4], phi[4], dphidxsi[4], dphideta[4], dphidx[4], dphidy[4];
+  int iElem, iInteg, iEdge, i, j, d, map[4], mapX[4], mapY[4];
+  int nLocal = theMesh->nLocalNode;
+  double a = theProblem->A;
+  double b = theProblem->B;
+  double c = theProblem->C;
+  double rho = theProblem->rho;
+  double gx = theProblem->gx;
+  double gy = theProblem->gy;
+  double **A = theSystem->A;
+  double *B = theSystem->B;
+  int count = 0;
+  for (iElem = 0; iElem < theMesh->nElem; iElem++) {
+    for (j = 0; j < nLocal; j++) {
+      map[j] = theMesh->elem[iElem * nLocal + j];
+      mapX[j] = 2 * map[j];
+      mapY[j] = 2 * map[j] + 1;
+      x[j] = theNodes->X[map[j]];
+      y[j] = theNodes->Y[map[j]];
+    }
+    
+    /*
+    printf("Element %d\n", iElem);
+    printf("X[0] = %f, Y[0] = %f\n", x[0], y[0]);
+    printf("X[1] = %f, Y[1] = %f\n", x[1], y[1]);
+    printf("X[2] = %f, Y[2] = %f\n", x[2], y[2]);
+    */
+   
+    for (iInteg = 0; iInteg < theRule->n; iInteg++) {
+      
+      double xsi = theRule->xsi[iInteg];
+      double eta = theRule->eta[iInteg];
+      double weight = theRule->weight[iInteg];
+      femDiscretePhi2(theSpace, xsi, eta, phi);
+      femDiscreteDphi2(theSpace, xsi, eta, dphidxsi, dphideta);
+
+      double dxdxsi = 0.0;
+      double dxdeta = 0.0;
+      double dydxsi = 0.0;
+      double dydeta = 0.0;
+      for (i = 0; i < theSpace->n; i++) {
+        dxdxsi += x[i] * dphidxsi[i];
+        dxdeta += x[i] * dphideta[i];
+        dydxsi += y[i] * dphidxsi[i];
+        dydeta += y[i] * dphideta[i];
+      }
+      double jac = dxdxsi * dydeta - dxdeta * dydxsi;
+      if (jac < 0.0 && iInteg == 0) {
+        printf("Negative jacobian! Your mesh is oriented in reverse. The normals will be wrong\n");
+        count++;
+      }
+      jac = fabs(jac);
+      double dvdy = 0;
+      for (i = 0; i < theSpace->n; i++) {
+        dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;
+        dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac;
+        dvdy += dphidy[i] * theProblem->soluce[2*map[i]+1];
+      }
+      for (i = 0; i < theSpace->n; i++) {
+        for (j = 0; j < theSpace->n; j++) {
+          A[map[i]][map[j]] += phi[i]*phi[j]*weight*jac;
+        }
+      }
+      for (i = 0; i < theSpace->n; i++) {
+        B[map[i]] += phi[i]* dvdy * jac * weight;
+      }
+    }
+  }
+double *solution = femFullSystemEliminate(theSystem);
+memcpy(E_YY, solution, sizeof(double) * theNodes->nNodes);
+  printf("Number of elements with negative jacobian: %d\n", count);
+}
+
+void femElasticityAssembleElementsE_XY(femProblem *theProblem, double *E_XX) {
+
+  femFullSystem *theSystem = theProblem->system;
+  femFullSystemInit(theSystem);
+  femIntegration *theRule = theProblem->rule;
+  femDiscrete *theSpace = theProblem->space;
+  femGeo *theGeometry = theProblem->geometry;
+  femNodes *theNodes = theGeometry->theNodes;
+  femMesh *theMesh = theGeometry->theElements;
+  double x[4], y[4], phi[4], dphidxsi[4], dphideta[4], dphidx[4], dphidy[4];
+  int iElem, iInteg, iEdge, i, j, d, map[4], mapX[4], mapY[4];
+  int nLocal = theMesh->nLocalNode;
+  double a = theProblem->A;
+  double b = theProblem->B;
+  double c = theProblem->C;
+  double rho = theProblem->rho;
+  double gx = theProblem->gx;
+  double gy = theProblem->gy;
+  double **A = theSystem->A;
+  double *B = theSystem->B;
+  int count = 0;
+  for (iElem = 0; iElem < theMesh->nElem; iElem++) {
+    for (j = 0; j < nLocal; j++) {
+      map[j] = theMesh->elem[iElem * nLocal + j];
+      mapX[j] = 2 * map[j];
+      mapY[j] = 2 * map[j] + 1;
+      x[j] = theNodes->X[map[j]];
+      y[j] = theNodes->Y[map[j]];
+    }
+    
+    /*
+    printf("Element %d\n", iElem);
+    printf("X[0] = %f, Y[0] = %f\n", x[0], y[0]);
+    printf("X[1] = %f, Y[1] = %f\n", x[1], y[1]);
+    printf("X[2] = %f, Y[2] = %f\n", x[2], y[2]);
+    */
+   
+    for (iInteg = 0; iInteg < theRule->n; iInteg++) {
+      
+      double xsi = theRule->xsi[iInteg];
+      double eta = theRule->eta[iInteg];
+      double weight = theRule->weight[iInteg];
+      femDiscretePhi2(theSpace, xsi, eta, phi);
+      femDiscreteDphi2(theSpace, xsi, eta, dphidxsi, dphideta);
+
+      double dxdxsi = 0.0;
+      double dxdeta = 0.0;
+      double dydxsi = 0.0;
+      double dydeta = 0.0;
+      for (i = 0; i < theSpace->n; i++) {
+        dxdxsi += x[i] * dphidxsi[i];
+        dxdeta += x[i] * dphideta[i];
+        dydxsi += y[i] * dphidxsi[i];
+        dydeta += y[i] * dphideta[i];
+      }
+      double jac = dxdxsi * dydeta - dxdeta * dydxsi;
+      if (jac < 0.0 && iInteg == 0) {
+        printf("Negative jacobian! Your mesh is oriented in reverse. The normals will be wrong\n");
+        count++;
+      }
+      jac = fabs(jac);
+      double dudy = 0;
+      double dvdx = 0;
+      for (i = 0; i < theSpace->n; i++) {
+        dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;
+        dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac;
+        dudy += dphidy[i] * theProblem->soluce[2*map[i]];
+        dvdx += dphidx[i] * theProblem->soluce[2*map[i]+1];
+      }
+      for (i = 0; i < theSpace->n; i++) {
+        for (j = 0; j < theSpace->n; j++) {
+          A[map[i]][map[j]] += phi[i]*phi[j]*weight*jac;
+        }
+      }
+      for (i = 0; i < theSpace->n; i++) {
+        B[map[i]] += (0.5)*phi[i]* (dudy + dvdx) * jac * weight;
+      }
+    }
+  }
+double *solution = femFullSystemEliminate(theSystem);
+memcpy(E_XX, solution, sizeof(double) * theNodes->nNodes);
+  printf("Number of elements with negative jacobian: %d\n", count);
+}
+
+
+
