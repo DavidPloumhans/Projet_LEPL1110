@@ -16,7 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include<stdbool.h>
+#include <stdbool.h>
 
 #define ErrorScan(a) femErrorScan(a, __LINE__, __FILE__)
 #define ErrorGmsh(a) femErrorGmsh(a, __LINE__, __FILE__)
@@ -200,5 +200,9 @@ double *solve_cg(femFullSystem *mySystem);
 double max(double a,double b,double c);
 double lev(double a[3][3], double y[3][1], double x[3][1]);
 void calculateEigenValues(double a[3][3], double eigenvalues[3]);
+
+int Jacobi(double *S, double *UT, int N, double Epsilon);
+void PrintMatrix(double *M, int N);
+
 
 #endif

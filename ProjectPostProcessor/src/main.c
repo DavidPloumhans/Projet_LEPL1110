@@ -58,10 +58,49 @@ int main(void) {
     sigma_YY[i] = A * E_YY[i] + B * (E_XX[i] + E_ThetaTheta[i]);
     sigma_XY[i] = 2 * C * E_XY[i];
   }
+  // calcul des valeurs propres
   for (int i = 0; i < n; i++) {
-    // calcul des valeurs propres
-    double sigma[3][3] = {{sigma_XX[i], 0, sigma_XY[i]}, {0, sigma_ThetaTheta[i], 0}, {sigma_XY[i], 0, sigma_YY[i]}};  // tenseur des contraintes
-    calculateEigenValues(sigma, &eigen_values[3 * i]);  // remplit eigen_values[3*i], eigen_values[3*i+1], eigen_values[3*i+2]
+    double *sigma = malloc(9 * sizeof(double));
+    sigma[0] = sigma_XX[i];
+    sigma[2] = sigma_XY[i];
+    sigma[4] = sigma_ThetaTheta[i];
+    sigma[6] = sigma_XY[i];
+    sigma[8] = sigma_YY[i];
+    double *UT = malloc(9 * sizeof(double));
+    double epsilon = 1;
+    int iterations = Jacobi(sigma, UT, 3, epsilon);  // l'algorithme de Jacobi, calcule les valeurs propres et les vecteurs propres
+    // ordonne les valeurs propres
+    if (sigma[0] > sigma[4] && sigma[0] > sigma[8]) {
+      eigen_values[3 * i] = sigma[0];
+      if (sigma[4] > sigma[8]) {
+        eigen_values[3 * i + 1] = sigma[4];
+        eigen_values[3 * i + 2] = sigma[8];
+      } else {
+        eigen_values[3 * i + 1] = sigma[8];
+        eigen_values[3 * i + 2] = sigma[4];
+      }
+    } else if (sigma[4] > sigma[0] && sigma[4] > sigma[8]) {
+      eigen_values[3 * i] = sigma[4];
+      if (sigma[0] > sigma[8]) {
+        eigen_values[3 * i + 1] = sigma[0];
+        eigen_values[3 * i + 2] = sigma[8];
+      } else {
+        eigen_values[3 * i + 1] = sigma[8];
+        eigen_values[3 * i + 2] = sigma[0];
+      }
+    } else {
+      eigen_values[3 * i] = sigma[8];
+      if (sigma[0] > sigma[4]) {
+        eigen_values[3 * i + 1] = sigma[0];
+        eigen_values[3 * i + 2] = sigma[4];
+      } else {
+        eigen_values[3 * i + 1] = sigma[4];
+        eigen_values[3 * i + 2] = sigma[0];
+      }
+    }
+    // PrintMatrix(sigma, 3);
+    free(sigma);
+    free(UT);
   }
 
   // calcul de Von Mises
@@ -90,13 +129,7 @@ int main(void) {
     } else {
       CM[i] = 0.0;  // satisfait la condition de Mohr
     }
-    // cas où le solveur n'a pas convergé
-    if (eigen_values[3 * i] == 0 ) {
-      CM[i] = 0.0;
-    }
-    if (eigen_values[3 * i + 2] == 0 ) {
-      CM[i] = 0.0;
-    }
+
   }
 
   // Affichage de quelques valeurs pour s'assurer du bon sens de la réponse
@@ -114,20 +147,19 @@ int main(void) {
     printf("eigen_values[%d][1] = %f\n", i, eigen_values[3 * i + 1]);
     printf("eigen_values[%d][2] = %f\n", i, eigen_values[3 * i + 2]);
     printf("sigma_VM[%d] = %f\n", i, sigma_VM[i]);
+    printf("CM[%d] = %f\n", i, CM[i]);
   }
   */
 
-  // valeur de la contrainte selon ZZ sur le bas
-  int number[8] = {145, 146, 147, 30, 40, 60, 100, 135};  // noeuds appartennant au domaine "Bottom"  (j'ai été voir dans le fichier mesh.txt)
-  for (int i = 0; i < 8; i++) {
-    printf("sigma_YY[%d] = %f\n", number[i], sigma_YY[number[i]]);
+  // valeur de la contrainte selon ZZ sur le bas => à améliorer
+  int number[10] = {139,   140,   141,   142,   143,   144,   145,   146,   147,   148};  // noeuds appartennant au domaine "Bottom"  (j'ai été voir dans le fichier mesh.txt)
+  double average_value_YY = 0;
+  for (int i = 0; i < 10; i++) {
+    average_value_YY += sigma_YY[number[i]];
   }
+  average_value_YY /= 10.0;
+  printf(" ==== Average value of sigma_YY on the bottom domain       :      %f\n", average_value_YY);
   
-  // je veux récupérer les noeuds dans ce domain
-  
-  
-
-
   //
   //  -2- Deformation du maillage pour le plot final
   //      Creation du champ de la norme du deplacement
@@ -204,7 +236,7 @@ int main(void) {
     {
       glfemPlotField(theGeometry->theElements, sigma_VM);
       glfemPlotMesh(theGeometry->theElements);
-      sprintf(theMessage, "Von mises max : %f MPa", vonMisesMax / 1.e6);
+      sprintf(theMessage, "Von mises stress", vonMisesMax / 1.e6);
       glColor3f(1.0, 0.0, 0.0);
       glfemMessage(theMessage);
     }
@@ -212,7 +244,7 @@ int main(void) {
     {
       glfemPlotField(theGeometry->theElements, sigma_YY);
       glfemPlotMesh(theGeometry->theElements);
-      sprintf(theMessage, "sigma_ZZ max : %f MPa", femMax(sigma_YY, n) / 1.e6);
+      sprintf(theMessage, "Average sigma_ZZ sur bottom domain : %f MPa", average_value_YY / 1.e6);
       glColor3f(1.0, 0.0, 0.0);
       glfemMessage(theMessage);
     }
@@ -220,7 +252,7 @@ int main(void) {
     {
       glfemPlotField(theGeometry->theElements, CM);
       glfemPlotMesh(theGeometry->theElements);
-      sprintf(theMessage, "Coulomb-Mohr respecté ou non ?");
+      sprintf(theMessage, "Coulomb-Mohr respecte ou non ? Bleu : oui ; Pas bleu : non");
       glColor3f(1.0, 0.0, 0.0);
       glfemMessage(theMessage);
     }

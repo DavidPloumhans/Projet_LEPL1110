@@ -66,9 +66,9 @@ int main(void) {
   femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, AXISYM);  // Axisymétrique
 
   // faut rajouter les conditions aux limites
-  double topStress = 3.e9;
-  double fluidStress = 1.5e9;
-  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, topStress, NAN);
+  double topStress = -3.e8;
+  double fluidStress = -1.5e8;  // je mets le - pour avoir une normale rentrante
+  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_N, topStress, NAN);
   // femElasticityAddBoundaryCondition(theProblem, "Upper_line_black", NEUMANN_X, 0.0, NAN);  // pas nécessaire car condition naturelle
   femElasticityAddBoundaryCondition(theProblem,"Upper_line_brown", DIRICHLET_X, 0.0, NAN);
   femElasticityAddBoundaryCondition(theProblem,"Upper_curvature", NEUMANN_N, fluidStress, NAN);

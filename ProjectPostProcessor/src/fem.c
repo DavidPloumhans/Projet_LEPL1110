@@ -1718,3 +1718,83 @@ void calculateEigenValues(double a[3][3], double eigenvalues[3]) {
     eigenvalues[2] = l3;
   }
 }
+
+
+// Performs the Jacobi eigenvalue algorithm until the largest absolute
+// off-diagonal element is smaller than Epsilon.
+// The matrices S and U^T of size NxN are stored in row major memory layout.
+// The runtime of the algorithm is in O(N^2) per iteration.
+int Jacobi(double *S, double *UT, int N, double Epsilon) {
+    // Set U^T to identity matrix
+    for(int K = 0; K < N*N; ++K) {
+        UT[K] = 0.0;
+    }
+    for(int K = 0; K < N; ++K) {
+        UT[K*N + K] = 1.0;
+    }
+    
+    for(int It = 0, I, J;; ++It) {
+        // Seek largest (absolute) off-diagonal element
+        // Initialize with lower right most off-diagonal
+        I = N - 2;
+        J = N - 1;
+        for(int R = 0; R < N - 2; ++R) {
+            for(int C = R + 1; C < N; ++C) {
+                if(fabs(S[R*N + C]) > fabs(S[I*N + J])) {
+                    I = R;
+                    J = C;
+                }
+            }
+        }
+        
+        // Done if largest element is smaller than epsilon
+        if(fabs(S[I*N + J]) < Epsilon) {
+            return It;
+        }
+        
+        // Compute sine and cosine (pick larger root because why not)
+        double Sii = S[I*N + I];
+        double Sjj = S[J*N + J];
+        double Sij = S[I*N + J];
+        double Cot2A = (Sjj - Sii)/(2.0*Sij);
+        double TanA = -Cot2A + sqrt(Cot2A*Cot2A + 1.0);
+        double CosA = 1.0/sqrt(1.0 + TanA*TanA);
+        double SinA = TanA*CosA;
+        double CSq = CosA*CosA;
+        double SSq = SinA*SinA;
+        double SC = SinA*CosA;
+        
+        // S <- R*S*R^T
+        S[I*N + I] = CSq*Sii - 2*SC*Sij + SSq*Sjj;
+        S[J*N + J] = SSq*Sii + 2*SC*Sij + CSq*Sjj;
+        S[I*N + J] = 0.0;
+        S[J*N + I] = 0.0;
+        for(int K = 0; K < N; ++K) {
+            if(K != I && K != J) {
+                double Sik = S[I*N + K];
+                double Sjk = S[J*N + K];
+                S[I*N + K] = S[K*N + I] = CosA*Sik - SinA*Sjk;
+                S[J*N + K] = S[K*N + J] = SinA*Sik + CosA*Sjk;
+            }
+        }
+        
+        // U^T <- U^T*R^T (U^T will contain the eigenvectors)
+        for(int K = 0; K < N; ++K) {
+            double UTki = UT[K*N + I];
+            double UTkj = UT[K*N + J];
+            UT[K*N + I] = CosA*UTki - SinA*UTkj;
+            UT[K*N + J] = CosA*UTkj + SinA*UTki;
+        }
+    }
+}
+
+
+void PrintMatrix(double *M, int N) {
+    for(int I = 0; I < N; ++I) {
+        for(int J = 0; J < N; ++J) {
+            printf("%.9f ", M[I*N + J]);
+        }
+        printf("\n");
+    }
+    printf("\n");
+}
