@@ -50,7 +50,7 @@ int main(void) {
   geoSetDomainName(9,"Bottom");
 
   // Ecriture du maillage dans le fichier texte utilisé par PROJECT  
-  geoMeshWrite("../data/mesh.txt");
+  geoMeshWrite("../../data/mesh.txt");
   
   
   //
@@ -66,9 +66,22 @@ int main(void) {
   femProblem *theProblem = femElasticityCreate(theGeometry, E, nu, rho, gx, gy, AXISYM);  // Axisymétrique
 
   // faut rajouter les conditions aux limites
-  double topStress = -3.e8;
-  double fluidStress = -1.5e8;  // je mets le - pour avoir une normale rentrante
-  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_N, topStress, NAN);
+  double topStress = -3.e9;
+  double bottomStress = 3.e9;
+  double fluidStress = -0.33 * bottomStress;  // je mets le - pour avoir une normale rentrante
+  // je tente quelque chose de différent pour les conditions aux limites
+  femElasticityAddBoundaryCondition(theProblem, "Top", DIRICHLET_Y, 0, NAN);
+  // femElasticityAddBoundaryCondition(theProblem, "Upper_line_black", NEUMANN_X, 0.0, NAN);  // pas nécessaire car condition naturelle
+  femElasticityAddBoundaryCondition(theProblem,"Upper_line_brown", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Upper_curvature", NEUMANN_N, fluidStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Concave_curvature", NEUMANN_N, fluidStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Purple_line", NEUMANN_X, fluidStress, NAN); 
+  femElasticityAddBoundaryCondition(theProblem,"Lower_line_brown", DIRICHLET_X, 0.0, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Bottom_curve", NEUMANN_N, bottomStress, NAN); // la bottom curve ne peut pas bouger non plus sinon pas de sens
+  femElasticityAddBoundaryCondition(theProblem, "Bottom", NEUMANN_Y, bottomStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);  
+  /*
+  femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, topStress, NAN);
   // femElasticityAddBoundaryCondition(theProblem, "Upper_line_black", NEUMANN_X, 0.0, NAN);  // pas nécessaire car condition naturelle
   femElasticityAddBoundaryCondition(theProblem,"Upper_line_brown", DIRICHLET_X, 0.0, NAN);
   femElasticityAddBoundaryCondition(theProblem,"Upper_curvature", NEUMANN_N, fluidStress, NAN);
@@ -78,10 +91,11 @@ int main(void) {
   femElasticityAddBoundaryCondition(theProblem,"Bottom_curve", DIRICHLET_Y, 0.0, NAN); // la bottom curve ne peut pas bouger non plus sinon pas de sens
   femElasticityAddBoundaryCondition(theProblem, "Bottom", DIRICHLET_Y, 0.0, NAN);
   femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);
+  */
 
-  
+
   femElasticityPrint(theProblem);
-  femElasticityWrite(theProblem, "../data/problem.txt");
+  femElasticityWrite(theProblem, "../../data/problem.txt");
 
   //
   //  -3- Champ de la taille de référence du maillage (uniquement pour la visualisation)

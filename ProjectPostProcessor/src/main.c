@@ -11,6 +11,8 @@
  */
 
 #include "glfem.h"
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 
 int main(void) {
   printf("\n\n    V : Mesh and displacement norm \n");
@@ -22,12 +24,12 @@ int main(void) {
   //
 
   femGeo *theGeometry = geoGetGeometry();
-  geoMeshRead("../data/mesh.txt");
+  geoMeshRead("../../data/mesh.txt");
 
-  femProblem *theProblem = femElasticityRead(theGeometry, "../data/problem.txt");
+  femProblem *theProblem = femElasticityRead(theGeometry, "../../data/problem.txt");
   double *theSoluce = theProblem->soluce;
   int n = theGeometry->theNodes->nNodes;
-  femSolutiondRead(2*n,theSoluce, "../data/UV.txt");
+  femSolutiondRead(2*n,theSoluce, "../../data/UV.txt");
   femElasticityPrint(theProblem);
 
   // X c'est R et Y c'est Z
@@ -151,14 +153,14 @@ int main(void) {
   }
   */
 
-  // valeur de la contrainte selon ZZ sur le bas => à améliorer
-  int number[10] = {139,   140,   141,   142,   143,   144,   145,   146,   147,   148};  // noeuds appartennant au domaine "Bottom"  (j'ai été voir dans le fichier mesh.txt)
-  double average_value_YY = 0;
-  for (int i = 0; i < 10; i++) {
-    average_value_YY += sigma_YY[number[i]];
+  // valeur de la contrainte selon ZZ sur le haut
+  int numberT[3] = {55, 57, 58};  // noeuds appartennant au domaine "Bottom"  (j'ai été voir dans le fichier mesh.txt)
+  double average_value_YY_top = 0;
+  for (int i = 0; i < 3; i++) {
+    average_value_YY_top += sigma_YY[numberT[i]];
   }
-  average_value_YY /= 10.0;
-  printf(" ==== Average value of sigma_YY on the bottom domain       :      %f\n", average_value_YY);
+  average_value_YY_top /= 3.0;
+  printf(" ==== Average value of sigma_YY on the top domain       :      %f\n", average_value_YY_top);
   
   //
   //  -2- Deformation du maillage pour le plot final
@@ -166,7 +168,7 @@ int main(void) {
   //
 
   femNodes *theNodes = theGeometry->theNodes;
-  double deformationFactor = 1e1;  // change le facteur de déformation pour ne pas avoir quelque chose d'absurde
+  double deformationFactor = 1e2;  // change le facteur de déformation pour ne pas avoir quelque chose d'absurde
   double *normDisplacement = malloc(theNodes->nNodes * sizeof(double));
 
   for (int i = 0; i < n; i++) {
@@ -191,82 +193,135 @@ int main(void) {
   char theMessage[MAXNAME];
 
   GLFWwindow *window = glfemInit("EPL1110 : Project 2022-23 ");
+  glfwSetWindowPos(window, 0, 0);
   glfwMakeContextCurrent(window);
   glfwSetScrollCallback(window, scroll_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-  do {
-    int w, h;
-    glfwGetFramebufferSize(window, &w, &h);
-    glfemReshapeWindows(window, theGeometry->theNodes, w, h);
+  bool autoSwtich = true;  // ce qu'il faut mettre pour avoir la "vidéo"
 
-    t = glfwGetTime();
-    if (glfwGetKey(window, 'D') == GLFW_PRESS) {
-      mode = 0;
-    }
-    if (glfwGetKey(window, 'V') == GLFW_PRESS) {
-      mode = 1;
-    }
-    if (glfwGetKey(window, 'Q') == GLFW_PRESS) {  // Von mises
-      mode = 2;
-    }
-    if (glfwGetKey(window, 'W') == GLFW_PRESS) {  // ZZ stress
-      mode = 3;
-    }
-    if (glfwGetKey(window, 'R') == GLFW_PRESS) {  // Coulomb-Mohr respecté ou non
-      mode = 4;
-    }
-    if (glfwGetKey(window, 'N') == GLFW_PRESS && freezingButton == FALSE) {
-      domain++;
-      freezingButton = TRUE;
-      told = t;
-    }
+  if (autoSwtich) {  // ça marche
 
-    if (t - told > 0.5) {
-      freezingButton = FALSE;
+    for (mode; mode < 5; mode++) {
+      double start = glfwGetTime();
+      while (glfwGetTime() - start < 3.0) {
+        int w, h;
+        glfwGetFramebufferSize(window, &w, &h);
+        glfemReshapeWindows(window, theGeometry->theNodes, w, h);
+        t = glfwGetTime();
+        if (mode == 1) {
+          glfemPlotField(theGeometry->theElements, normDisplacement);
+          glfemPlotMesh(theGeometry->theElements);
+          sprintf(theMessage, "Deformation elastique (* %d)  Number of elements : %d ", (int) deformationFactor, theGeometry->theElements->nElem);
+          glColor3f(1.0, 0.0, 0.0);
+          glfemMessage(theMessage);
+        }
+        if (mode == 2) // affichage de Von mises
+        {
+          glfemPlotField(theGeometry->theElements, sigma_VM);
+          glfemPlotMesh(theGeometry->theElements);
+          sprintf(theMessage, "Contrainte de Von Mises", vonMisesMax / 1.e6);
+          glColor3f(1.0, 0.0, 0.0);
+          glfemMessage(theMessage);
+        }
+        if (mode == 3) // affichage de sigma_YY (ZZ stress)
+        {
+          glfemPlotField(theGeometry->theElements, sigma_YY);
+          glfemPlotMesh(theGeometry->theElements);
+          sprintf(theMessage, "sigma_zz moyen sur top domain : %f MPa", average_value_YY_top / 1.e6);
+          glColor3f(1.0, 0.0, 0.0);
+          glfemMessage(theMessage);
+        }
+        if (mode == 4) // affichage de Coulomb-Mohr
+        {
+          glfemPlotField(theGeometry->theElements, CM);
+          glfemPlotMesh(theGeometry->theElements);
+          sprintf(theMessage, "Coulomb-Mohr respecte ou non ? Bleu : oui ; Pas bleu : non");
+          glColor3f(1.0, 0.0, 0.0);
+          glfemMessage(theMessage);
+        }
+        glfwSwapBuffers(window);
+        glfwPollEvents();
+      }
     }
-    if (mode == 1) {
-      glfemPlotField(theGeometry->theElements, normDisplacement);
-      glfemPlotMesh(theGeometry->theElements);
-      sprintf(theMessage, "Elastic deformation   Number of elements : %d ", theGeometry->theElements->nElem);
-      glColor3f(1.0, 0.0, 0.0);
-      glfemMessage(theMessage);
-    }
-    if (mode == 2) // affichage de Von mises
-    {
-      glfemPlotField(theGeometry->theElements, sigma_VM);
-      glfemPlotMesh(theGeometry->theElements);
-      sprintf(theMessage, "Von mises stress", vonMisesMax / 1.e6);
-      glColor3f(1.0, 0.0, 0.0);
-      glfemMessage(theMessage);
-    }
-    if (mode == 3) // affichage de sigma_YY (ZZ stress)
-    {
-      glfemPlotField(theGeometry->theElements, sigma_YY);
-      glfemPlotMesh(theGeometry->theElements);
-      sprintf(theMessage, "Average sigma_ZZ sur bottom domain : %f MPa", average_value_YY / 1.e6);
-      glColor3f(1.0, 0.0, 0.0);
-      glfemMessage(theMessage);
-    }
-    if (mode == 4) // affichage de Coulomb-Mohr
-    {
-      glfemPlotField(theGeometry->theElements, CM);
-      glfemPlotMesh(theGeometry->theElements);
-      sprintf(theMessage, "Coulomb-Mohr respecte ou non ? Bleu : oui ; Pas bleu : non");
-      glColor3f(1.0, 0.0, 0.0);
-      glfemMessage(theMessage);
-    }
-    if (mode == 0) {
-      domain = domain % theGeometry->nDomains;
-      glfemPlotDomain(theGeometry->theDomains[domain]);
-      sprintf(theMessage, "%s : %d ", theGeometry->theDomains[domain]->name, domain);
-      glColor3f(1.0, 0.0, 0.0);
-      glfemMessage(theMessage);
-    }
+  } else {
+    do {
+      int w, h;
+      glfwGetFramebufferSize(window, &w, &h);
+      glfemReshapeWindows(window, theGeometry->theNodes, w, h);
 
-    glfwSwapBuffers(window);
-    glfwPollEvents();
-  } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) != 1);
+      t = glfwGetTime();
+      if (glfwGetKey(window, 'D') == GLFW_PRESS) {
+        mode = 0;
+      }
+      if (glfwGetKey(window, 'V') == GLFW_PRESS) {
+        mode = 1;
+      }
+      if (glfwGetKey(window, 'Q') == GLFW_PRESS) {  // Von mises
+        mode = 2;
+      }
+      if (glfwGetKey(window, 'W') == GLFW_PRESS) {  // ZZ stress
+        for (int i = 0; i < n; i++) {
+          sigma_YY[i] = -sigma_YY[i]; // mets en valeur absolue
+        }
+        mode = 3;
+      }
+      if (glfwGetKey(window, 'R') == GLFW_PRESS) {  // Coulomb-Mohr respecté ou non
+        mode = 4;
+      }
+      if (glfwGetKey(window, 'N') == GLFW_PRESS && freezingButton == FALSE) {
+        domain++;
+        freezingButton = TRUE;
+        told = t;
+      }
+
+      if (t - told > 0.5) {
+        freezingButton = FALSE;
+      }
+      if (mode == 1) {
+        glfemPlotField(theGeometry->theElements, normDisplacement);
+        glfemPlotMesh(theGeometry->theElements);
+        sprintf(theMessage, "Elastic deformation   Number of elements : %d ", theGeometry->theElements->nElem);
+        glColor3f(1.0, 0.0, 0.0);
+        glfemMessage(theMessage);
+      }
+      if (mode == 2) // affichage de Von mises
+      {
+        glfemPlotField(theGeometry->theElements, sigma_VM);
+        glfemPlotMesh(theGeometry->theElements);
+        sprintf(theMessage, "Von mises stress", vonMisesMax / 1.e6);
+        glColor3f(1.0, 0.0, 0.0);
+        glfemMessage(theMessage);
+      }
+      if (mode == 3) // affichage de sigma_YY (ZZ stress)
+      {
+        glfemPlotField(theGeometry->theElements, sigma_YY);
+        glfemPlotMesh(theGeometry->theElements);
+        sprintf(theMessage, "sigma_zz moyen sur top domain : %f MPa", average_value_YY_top / 1.e6);
+        glColor3f(1.0, 0.0, 0.0);
+        glfemMessage(theMessage);
+      }
+      if (mode == 4) // affichage de Coulomb-Mohr
+      {
+        glfemPlotField(theGeometry->theElements, CM);
+        glfemPlotMesh(theGeometry->theElements);
+        sprintf(theMessage, "Coulomb-Mohr respecte ou non ? Bleu : oui ; Pas bleu : non");
+        glColor3f(1.0, 0.0, 0.0);
+        glfemMessage(theMessage);
+      }
+      if (mode == 0) {
+        domain = domain % theGeometry->nDomains;
+        glfemPlotDomain(theGeometry->theDomains[domain]);
+        sprintf(theMessage, "%s : %d ", theGeometry->theDomains[domain]->name, domain);
+        glColor3f(1.0, 0.0, 0.0);
+        glfemMessage(theMessage);
+      }
+
+      glfwSwapBuffers(window);
+      glfwPollEvents();
+    } while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS && glfwWindowShouldClose(window) != 1);
+  }
+  
 
   // Check if the ESC key was pressed or the window was closed
 

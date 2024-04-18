@@ -1,0 +1,15 @@
+Type of problem    :  Axi-symetric problem 
+Young modulus      :  7.0000000e+11  
+Poisson ratio      :  3.1000000e-01  
+Mass density       :  1.5630000e+04  
+Gravity-X          :  0.0000000e+00  
+Gravity-Y          : -9.8100000e+00  
+Boundary condition :  Dirichlet-Y        =  0.0000000e+00,            nan : Top
+Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Upper_line_brown
+Boundary condition :  Neumann-N          = -3.3000000e+09,            nan : Upper_curvature
+Boundary condition :  Neumann-N          = -3.3000000e+09,            nan : Concave_curvature
+Boundary condition :  Neumann-X          = -3.3000000e+09,            nan : Purple_line
+Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Lower_line_brown
+Boundary condition :  Neumann-N          =  1.0000000e+10,            nan : Bottom_curve
+Boundary condition :  Neumann-Y          =  1.0000000e+10,            nan : Bottom
+Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Symetry

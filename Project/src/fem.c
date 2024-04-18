@@ -1051,7 +1051,6 @@ double *solve_cg(femFullSystem *mySystem) {
   sparseMatrix* sp = to_sparse(A, size);
   //stop = clock();
   //printf("Time to create sparse mat: %f ms\n", 1000 * (double)(stop - start) / CLOCKS_PER_SEC);
-  //start = clock();
 
   int niter = 0;
   double *x = malloc(size * sizeof(double));
