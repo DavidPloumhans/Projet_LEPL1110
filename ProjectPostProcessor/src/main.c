@@ -43,10 +43,10 @@ int main(void) {
   double *E_YY = malloc(n * sizeof(double));
   double *E_XY = malloc(n * sizeof(double));
   double *E_ThetaTheta = malloc(n * sizeof(double));
-  femElasticityAssembleElementsE_XX(theProblem, E_XX);
-  femElasticityAssembleElementsE_YY(theProblem, E_YY);
-  femElasticityAssembleElementsE_XY(theProblem, E_XY);
-  femElasticityAssembleElementsE_ThetaTheta(theProblem, E_ThetaTheta);
+  femElasticityEpsilon(theProblem, E_XX, 0);
+  femElasticityEpsilon(theProblem, E_YY, 1);
+  femElasticityEpsilon(theProblem, E_XY, 2);
+  femElasticityEpsilon(theProblem, E_ThetaTheta, 3);
 
   // calcul du tenseur des contraintes
 

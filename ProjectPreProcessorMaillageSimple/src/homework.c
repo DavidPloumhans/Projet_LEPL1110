@@ -13,7 +13,7 @@ double dist(double x, double y, double x0, double y0) {  // renvoie la distance 
 }
 
 double geoSize(double x, double y){
-    return 0.04;
+    return 0.06;
 }
 
 

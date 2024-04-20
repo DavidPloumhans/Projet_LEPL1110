@@ -57,10 +57,8 @@ int main(void) {
   double p = -3.e6;  // 3 GPa
   // je tente quelque chose de différent pour les conditions aux limites
   femElasticityAddBoundaryCondition(theProblem, "Top", NEUMANN_Y, p, NAN);
-  femElasticityAddBoundaryCondition(theProblem, "Bottom", DIRICHLET_Y, 0.0, NAN);
   femElasticityAddBoundaryCondition(theProblem, "Axis", DIRICHLET_X, 0.0, NAN);
-
-
+  femElasticityAddBoundaryCondition(theProblem, "Bottom", DIRICHLET_Y, 0.0, NAN);
 
   femElasticityPrint(theProblem);
   femElasticityWrite(theProblem, "../../data/problemSimple.txt");

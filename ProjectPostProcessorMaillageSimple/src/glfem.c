@@ -290,6 +290,14 @@ void glfemDrawNodes(double *x, double *y, int n) {
   glEnd();
 }
 
+void glfemDrawNode(double x, double y) {
+  glEnable(GL_POINT_SMOOTH);
+  glPointSize(5000.0);
+  glBegin(GL_POINTS);
+  glVertex2f(x, y);
+  glEnd();
+}
+
 void glfemDrawColorElement(float *x, float *y, double *u, int n) {
   GLfloat r, g, b;
   int j;

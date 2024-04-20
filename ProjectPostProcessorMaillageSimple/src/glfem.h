@@ -21,6 +21,7 @@
 void glfemDrawColorElement(float *x, float *y, double *u, int n);
 void glfemDrawElement(float *x, float *y, int n);
 void glfemDrawNodes(double *x, double *y, int n);
+void glfemDrawNode(double x, double y);
 int glfemGetAction(void);
 
 void glfemReshapeWindows(GLFWwindow *window, femNodes *theNodes, int width, int height);

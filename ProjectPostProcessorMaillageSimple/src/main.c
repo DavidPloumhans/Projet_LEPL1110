@@ -33,6 +33,14 @@ int main(void) {
   femSolutiondRead(2*n,theSoluce, "../../data/UVSimple.txt");
   femElasticityPrint(theProblem);
 
+  double *uv = malloc(2 * n * sizeof(double));
+  calculateAnalytic(theProblem, uv, n, 3.e6);  // calcule la solution analytique
+  for (int i = 0; i < 50; i++) {
+    printf("Node %d\n", i);
+    printf("Analytic solution : U = %14.7le, V = %14.7le\n", uv[2 * i], uv[2 * i + 1]);
+    printf("Computed solution : U = %14.7le, V = %14.7le\n", theSoluce[2 * i], theSoluce[2 * i + 1]);
+  }
+
 
   // tensions aux noeuds
   
@@ -43,11 +51,26 @@ int main(void) {
   double *E_YY = malloc(n * sizeof(double));
   double *E_XY = malloc(n * sizeof(double));
   double *E_ThetaTheta = malloc(n * sizeof(double));
-  femElasticityAssembleElementsE_XX(theProblem, E_XX);
-  femElasticityAssembleElementsE_YY(theProblem, E_YY);
-  femElasticityAssembleElementsE_XY(theProblem, E_XY);
-  femElasticityAssembleElementsE_ThetaTheta(theProblem, E_ThetaTheta);
+  
+  femElasticityEpsilon(theProblem, E_XX, 0);
+  femElasticityEpsilon(theProblem, E_YY, 1);
+  femElasticityEpsilon(theProblem, E_XY, 2);
+  femElasticityEpsilon(theProblem, E_ThetaTheta, 3);
 
+  // Print les epsilon
+  double E = theProblem->E;
+  double nu = theProblem->nu;
+  double p = 3.e6;
+  double E_XX_analytic = nu / E * p;
+  double E_YY_analytic = -p/E;
+  double E_XY_analytic = 0.0;
+  double E_ThetaTheta_analytic = E_XX_analytic;
+  printf(" ==== Analytic solution : E_XX = %14.7le, E_YY = %14.7le, E_XY = %14.7le, E_ThetaTheta = %14.7le\n", E_XX_analytic, E_YY_analytic, E_XY_analytic, E_ThetaTheta_analytic);
+  for (int i = 0; i < 10; i++) {
+    printf("Node %d\n", i);
+    printf("E_XX = %14.7le, E_YY = %14.7le, E_XY = %14.7le, E_ThetaTheta = %14.7le\n", E_XX[i], E_YY[i], E_XY[i], E_ThetaTheta[i]);
+    
+  }
   // calcul du tenseur des contraintes
 
   double *sigma_XX = malloc(n * sizeof(double));
@@ -164,17 +187,52 @@ int main(void) {
   }
   average_value_YY_bottom /= 2 * bottomDomain->nElem;
   printf(" ==== Average value of sigma_YY on the bottom domain    :      %f\n", average_value_YY_bottom);
-
+  /*
+  // print le déplacement sur top domain
+  printf(" ==== Displacement on top domain\n");
+  for (int i = 0; i < topDomain->nElem; i++) {
+    int edge = topDomain->elem[i];
+    int node1 = theProblem->geometry->theEdges->elem[2 * edge];
+    int node2 = theProblem->geometry->theEdges->elem[2 * edge + 1];
+    printf("Edge %d : node1 = %d, node2 = %d\n", edge, node1, node2);
+    printf("Position node1 = %f, %f\n", theGeometry->theNodes->X[node1], theGeometry->theNodes->Y[node1]);
+    printf("U_node1 = %14.7le, V_node1 = %14.7le\n", theSoluce[2 * node1], theSoluce[2 * node1 + 1]);
+    printf("U_node2 = %14.7le, V_node2 = %14.7le\n", theSoluce[2 * node2], theSoluce[2 * node2 + 1]);
+  }
+  // print le déplacement sur bottom domain
+  printf(" ==== Displacement on bottom domain\n");
+  for (int i = 0; i < bottomDomain->nElem; i++) {
+    int edge = bottomDomain->elem[i];
+    int node1 = theProblem->geometry->theEdges->elem[2 * edge];
+    int node2 = theProblem->geometry->theEdges->elem[2 * edge + 1];
+    printf("Edge %d : node1 = %d, node2 = %d\n", edge, node1, node2);
+    printf("Position node1 = %f, %f\n", theGeometry->theNodes->X[node1], theGeometry->theNodes->Y[node1]);
+    printf("U_node1 = %14.7le, V_node1 = %14.7le\n", theSoluce[2 * node1], theSoluce[2 * node1 + 1]);
+    printf("U_node2 = %14.7le, V_node2 = %14.7le\n", theSoluce[2 * node2], theSoluce[2 * node2 + 1]);
+  }
+  // print le déplacement sur le axis domain
+  femDomain *axisDomain = theGeometry->theDomains[3];  // axis domain
+  printf(" ==== Displacement on axis domain\n");
+  for (int i = 0; i < axisDomain->nElem; i++) {
+    int edge = axisDomain->elem[i];
+    int node1 = theProblem->geometry->theEdges->elem[2 * edge];
+    int node2 = theProblem->geometry->theEdges->elem[2 * edge + 1];
+    printf("Edge %d : node1 = %d, node2 = %d\n", edge, node1, node2);
+    printf("Position node1 = %f, %f\n", theGeometry->theNodes->X[node1], theGeometry->theNodes->Y[node1]);
+    printf("U_node1 = %14.7le, V_node1 = %14.7le\n", theSoluce[2 * node1], theSoluce[2 * node1 + 1]);
+    printf("U_node2 = %14.7le, V_node2 = %14.7le\n", theSoluce[2 * node2], theSoluce[2 * node2 + 1]);
+  }
+  */
   //
   //
   //  -2- Deformation du maillage pour le plot final
   //      Creation du champ de la norme du deplacement
   //
-
   femNodes *theNodes = theGeometry->theNodes;
-  double deformationFactor = 1.2*1e2;  // change le facteur de déformation pour ne pas avoir quelque chose d'absurde
+  double deformationFactor = 1.e5;  // change le facteur de déformation pour ne pas avoir quelque chose d'absurde
   double *normDisplacement = malloc(theNodes->nNodes * sizeof(double));
-
+  printf("X[0], Y[0] = %f, %f\n", theNodes->X[0], theNodes->Y[0]);
+  printf("Deplacement en X[0], Y[0] = %f, %f\n", theSoluce[0], theSoluce[1]);
   for (int i = 0; i < n; i++) {
     normDisplacement[i] = sqrt(theSoluce[2 * i + 0] * theSoluce[2 * i + 0] + theSoluce[2 * i + 1] * theSoluce[2 * i + 1]);
   }
@@ -191,6 +249,9 @@ int main(void) {
   //
   //  -3- Visualisation
   //
+  for (int i = 0; i < n; i++) {
+    sigma_YY[i] = abs(sigma_YY[i]); // mets en valeur absolue
+  }
 
   int mode = 1;
   int domain = 0;
@@ -218,7 +279,7 @@ int main(void) {
         if (mode == 1) {
           glfemPlotField(theGeometry->theElements, normDisplacement);
           glfemPlotMesh(theGeometry->theElements);
-          sprintf(theMessage, "Déplacement elastique (* %d)  Number of elements : %d ", (int) deformationFactor, theGeometry->theElements->nElem);
+          sprintf(theMessage, "Deplacement elastique (* %d)  Number of elements : %d ", (int) deformationFactor, theGeometry->theElements->nElem);
           glColor3f(1.0, 0.0, 0.0);
           glfemMessage(theMessage);
         }
@@ -289,7 +350,7 @@ int main(void) {
       if (mode == 1) {
         glfemPlotField(theGeometry->theElements, normDisplacement);
         glfemPlotMesh(theGeometry->theElements);
-        sprintf(theMessage, "Elastic deformation   Number of elements : %d ", theGeometry->theElements->nElem);
+        sprintf(theMessage, "Deplacement elastique   Number of elements : %d ", theGeometry->theElements->nElem);
         glColor3f(1.0, 0.0, 0.0);
         glfemMessage(theMessage);
       }

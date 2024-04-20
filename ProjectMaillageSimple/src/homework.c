@@ -59,7 +59,7 @@ void femElasticityAssembleElements(femProblem *theProblem) {
         dxdeta += x[i] * dphideta[i];
         dydxsi += y[i] * dphidxsi[i];
         dydeta += y[i] * dphideta[i];
-        xLoc += x[i]*phi[i];  // x local
+        xLoc += x[i]*phi[i];
       }
       double jac = dxdxsi * dydeta - dxdeta * dydxsi;
       if (jac < 0.0 && iInteg == 0) {
@@ -97,7 +97,7 @@ void femElasticityAssembleElements(femProblem *theProblem) {
           A[mapY[i]][mapY[j]] += (dphidy[i] * a * xLoc * dphidy[j] + dphidx[i] * c * xLoc * dphidx[j]) * jac * weight;
         }
       }
-      for (i = 0; i < theSpace->n; i++) {
+      for (i = 0; i < theSpace->n; i++) {         
         B[mapX[i]] += phi[i] * gx * rho * jac * weight * xLoc;
         B[mapY[i]] += phi[i] * gy * rho * jac * weight * xLoc;
       }
@@ -177,15 +177,15 @@ void femElasticityAssembleNeumann(femProblem *theProblem) {
           double xsi = theRule->xsi[iInteg];
           double weight = theRule->weight[iInteg];
           femDiscretePhi(theSpace, xsi, phi);
-          printf("theSpace->n : %d\n", theSpace->n);
+          // printf("theSpace->n : %d\n", theSpace->n);
           for (i = 0; i < theSpace->n; i++) {
             xLoc += x[i]*phi[i];  // x local
-            printf("x[i] : %f\n", x[i]);
-            printf("phi[i] : %f\n", phi[i]);
+            // printf("x[i] : %f\n", x[i]);
+            // printf("phi[i] : %f\n", phi[i]);
           }
-          printf("xLoc : %f\n", xLoc);
+          // printf("xLoc : %f\n", xLoc);
           for (i = 0; i < theSpace->n; i++) {
-            B[2*map[i] + 0] += jac * weight * phi[i] * f_x * xLoc;  // j'en suis pas méga sur
+            B[2*map[i] + 0] += jac * weight * phi[i] * f_x * xLoc;
             B[2*map[i] + 1] += jac * weight * phi[i] * f_y * xLoc;
           }
         }

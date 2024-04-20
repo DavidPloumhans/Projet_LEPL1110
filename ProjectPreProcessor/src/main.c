@@ -67,8 +67,10 @@ int main(void) {
 
   // faut rajouter les conditions aux limites
   double bottomStress = 5.e9;
-  double fluidStress = -0.25 * bottomStress;  // je mets le - pour avoir une normale rentrante
+  double fluidStress = -0.33 * bottomStress;  // je mets le - pour avoir une normale rentrante
   // je tente quelque chose de différent pour les conditions aux limites
+  /*
+  femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);  
   femElasticityAddBoundaryCondition(theProblem, "Top", DIRICHLET_Y, 0, NAN);
   // femElasticityAddBoundaryCondition(theProblem, "Upper_line_black", NEUMANN_X, 0.0, NAN);  // pas nécessaire car condition naturelle
   femElasticityAddBoundaryCondition(theProblem,"Upper_line_brown", DIRICHLET_X, 0.0, NAN);
@@ -78,7 +80,19 @@ int main(void) {
   femElasticityAddBoundaryCondition(theProblem,"Lower_line_brown", DIRICHLET_X, 0.0, NAN);
   femElasticityAddBoundaryCondition(theProblem,"Bottom_curve", NEUMANN_N, -bottomStress, NAN); // la bottom curve ne peut pas bouger non plus sinon pas de sens
   femElasticityAddBoundaryCondition(theProblem, "Bottom", NEUMANN_Y, bottomStress, NAN);
+  */
+  // version full Neumann
   femElasticityAddBoundaryCondition(theProblem, "Symetry", DIRICHLET_X, 0.0, NAN);  
+  femElasticityAddBoundaryCondition(theProblem, "Top", DIRICHLET_Y, 0, NAN);
+  // femElasticityAddBoundaryCondition(theProblem, "Upper_line_black", NEUMANN_X, 0.0, NAN);  // pas nécessaire car condition naturelle
+  femElasticityAddBoundaryCondition(theProblem,"Upper_line_brown", NEUMANN_X, 0.5 * fluidStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Upper_curvature", NEUMANN_N, fluidStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Concave_curvature", NEUMANN_N, fluidStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Purple_line", NEUMANN_X, fluidStress, NAN); 
+  femElasticityAddBoundaryCondition(theProblem,"Lower_line_brown", NEUMANN_X, 0.5 * fluidStress, NAN);
+  femElasticityAddBoundaryCondition(theProblem,"Bottom_curve", NEUMANN_N, -bottomStress, NAN); // la bottom curve ne peut pas bouger non plus sinon pas de sens
+  femElasticityAddBoundaryCondition(theProblem, "Bottom", NEUMANN_Y, bottomStress, NAN);
+  
 
   femElasticityPrint(theProblem);
   femElasticityWrite(theProblem, "../../data/problem.txt");

@@ -176,11 +176,7 @@ void femErrorScan(int test, int line, char *file);
 void femErrorGmsh(int test, int line, char *file);
 void femWarning(char *text, int line, char *file);
 
-void femElasticityAssembleElementsE_XX(femProblem *theProblem, double *E_XX);
-void femElasticityAssembleElementsE_YY(femProblem *theProblem, double *E_YY);
-void femElasticityAssembleElementsE_XY(femProblem *theProblem, double *E_XY);
-void femElasticityAssembleElementsE_ThetaTheta(femProblem *theProblem, double *E_ThetaTheta);
-
+void femElasticityEpsilon(femProblem *theProblem, double *E, int wtv);
 
 typedef struct sparseMatrix {
   int size;
@@ -214,4 +210,6 @@ double *femElasticityForces(femProblem *theProblem);
 void femFullSystemConstrainDirichlet_N(femFullSystem *mySystem, int myNode, double myValue, double nx, double ny);
 void femFullSystemConstrainDirichlet_T(femFullSystem *mySystem, int myNode, double myValue, double nx, double ny);
 double *femElasticitySolve(femProblem *theProblem);
+
+void calculateAnalytic(femProblem *theProblem, double *uv, int nNodes, double p);
 #endif

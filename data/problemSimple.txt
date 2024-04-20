@@ -5,5 +5,5 @@ Mass density       :  1.5630000e+04
 Gravity-X          :  0.0000000e+00  
 Gravity-Y          :  0.0000000e+00  
 Boundary condition :  Neumann-Y          = -3.0000000e+06,            nan : Top
-Boundary condition :  Dirichlet-Y        =  0.0000000e+00,            nan : Bottom
 Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Axis
+Boundary condition :  Dirichlet-Y        =  0.0000000e+00,            nan : Bottom
