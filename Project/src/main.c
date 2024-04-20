@@ -12,6 +12,7 @@
 
 #include "fem.h"
 // Faudra changer les chemins et supprimer cette ligne quand on rendra le projet
+// petites modifs
 int main(void) {
   femGeo *theGeometry = geoGetGeometry();
   geoMeshRead("../../data/mesh.txt");

@@ -11,7 +11,7 @@ def take_screenshot(img_name):
     image = pyautogui.screenshot(region = (0, 0, 650, 650))
     image.save(img_name)
 
-def capture_images(mesh, sigma_bottom, initial_sleep, interval=3):
+def capture_images(mesh, sigma_bottom, initial_sleep, interval=2):
     time.sleep(initial_sleep)
     take_screenshot(f"{mesh}_{sigma_bottom}_def.png")  # deformation
     time.sleep(interval)
@@ -32,7 +32,7 @@ def run(sigma_bottom):
     with open("data/problem.txt", "r") as file:
         lines = file.readlines()
         file.close()
-    case = 0.33
+    case = 0.1
     sigma_fluid = case * sigma_bottom
     # je change les valeurs
     lines[8] = f"Boundary condition :  Neumann-N          = -{sigma_fluid:.7e},            nan : Upper_curvature\n"
@@ -57,7 +57,7 @@ def run(sigma_bottom):
     # PostProcessor
     os.chdir(original_dir)
     # il va falloir prendre des screens avec la fonction capture_images
-    thread = threading.Thread(target=capture_images, args=("mesh1", sigma_bottom, 4.5))
+    thread = threading.Thread(target=capture_images, args=("mesh3", sigma_bottom, 3.5))
     command = '.\myFem.exe'
     thread.start()
     post_dir = "ProjectPostProcessor"
@@ -69,7 +69,7 @@ def run(sigma_bottom):
 
 
 def main():
-    nbr_image = 25
+    nbr_image = 20
     sigma_bottoms = np.linspace(10**8, 10**10, nbr_image)
     for sigma_bottom in sigma_bottoms:
         run(sigma_bottom)

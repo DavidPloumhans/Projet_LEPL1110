@@ -41,7 +41,7 @@ double geoSize(double x, double y){
     double x_side = 0.0;
     double y_side = h2/5.0;
     //Paramètres de notre maille les 2 arcs ont exactement les mêmes paramètres à l'exception de leur position
-    double h = ((l2/2.0)+l1)*0.3;
+    double h = ((l2/2.0)+l1)*0.2;
     double h_circle_arc = h*0.2;
     double h_Notch = h*0.05;
     double dNotch = h*3.0; 

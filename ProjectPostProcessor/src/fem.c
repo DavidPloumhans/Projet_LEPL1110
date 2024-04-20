@@ -1114,6 +1114,124 @@ femProblem *femElasticityRead(femGeo *theGeometry, const char *filename) {
   return theProblem;
 }
 
+femProblem *femElasticityRead2(femGeo *theGeometry, const char *filename) {
+  FILE *file = fopen(filename, "r");
+  if (!file) {
+    printf("Error at %s:%d\nUnable to open file %s\n", __FILE__, __LINE__, filename);
+    exit(-1);
+  }
+  femProblem *theProblem = malloc(sizeof(femProblem));
+  theProblem->nBoundaryConditions = 0;
+  theProblem->conditions = NULL;
+
+  int nNodes = theGeometry->theNodes->nNodes;
+  int size = 2 * nNodes;
+  theProblem->soluce = malloc(size * sizeof(double));
+  theProblem->residuals = malloc(size * sizeof(double));
+  for (int i = 0; i < size; i++) {
+    theProblem->soluce[i] = 0.0;
+    theProblem->residuals[i] = 0.0;
+  }
+
+  theProblem->constrainedNodes = malloc(nNodes * sizeof(femConstrainedNode));
+  for (int i = 0; i < nNodes; i++) {
+    theProblem->constrainedNodes[i].type = UNDEFINED;
+    theProblem->constrainedNodes[i].nx = NAN;
+    theProblem->constrainedNodes[i].ny = NAN;
+    theProblem->constrainedNodes[i].value2 = NAN;
+    theProblem->constrainedNodes[i].value2 = NAN;
+  }
+
+  theProblem->geometry = theGeometry;
+  if (theGeometry->theElements->nLocalNode == 3) {
+    theProblem->space = femDiscreteCreate(3, FEM_TRIANGLE);
+    theProblem->rule = femIntegrationCreate(3, FEM_TRIANGLE);
+  }
+  if (theGeometry->theElements->nLocalNode == 4) {
+    theProblem->space = femDiscreteCreate(4, FEM_QUAD);
+    theProblem->rule = femIntegrationCreate(4, FEM_QUAD);
+  }
+  theProblem->spaceEdge = femDiscreteCreate(2, FEM_EDGE);
+  theProblem->ruleEdge = femIntegrationCreate(2, FEM_EDGE);
+  theProblem->system = femFullSystemCreate(size);
+
+  char theLine[MAXNAME];
+  char theDomain[MAXNAME];
+  char theArgument[MAXNAME];
+  double value1, value2;
+  femBoundaryType typeCondition;
+
+  while (!feof(file)) {
+    ErrorScan(fscanf(file, "%19[^\n]s \n", (char *)&theLine));
+    if (strncasecmp(theLine, "Type of problem     ", 19) == 0) {
+      ErrorScan(fscanf(file, ":  %[^\n]s \n", (char *)&theArgument));
+      if (strncasecmp(theArgument, "Planar stresses", 13) == 0)
+        theProblem->planarStrainStress = PLANAR_STRESS;
+      if (strncasecmp(theArgument, "Planar strains", 13) == 0)
+        theProblem->planarStrainStress = PLANAR_STRAIN;
+      if (strncasecmp(theArgument, "Axi-symetric problem", 13) == 0)
+        theProblem->planarStrainStress = AXISYM;
+    }
+    if (strncasecmp(theLine, "Young modulus       ", 19) == 0) {
+      ErrorScan(fscanf(file, ":  %le\n", &theProblem->E));
+    }
+    if (strncasecmp(theLine, "Poisson ratio       ", 19) == 0) {
+      ErrorScan(fscanf(file, ":  %le\n", &theProblem->nu));
+    }
+    if (strncasecmp(theLine, "Mass density        ", 19) == 0) {
+      ErrorScan(fscanf(file, ":  %le\n", &theProblem->rho));
+    }
+    if (strncasecmp(theLine, "Gravity-X           ", 19) == 0) {
+      ErrorScan(fscanf(file, ":  %le\n", &theProblem->gx));
+    }
+    if (strncasecmp(theLine, "Gravity-Y           ", 19) == 0) {
+      ErrorScan(fscanf(file, ":  %le\n", &theProblem->gy));
+    }
+    if (strncasecmp(theLine, "Boundary condition  ", 19) == 0) {
+      ErrorScan(fscanf(file, ":  %19s = %le, %le : %[^\n]s\n", (char *)&theArgument, &value1, &value2, (char *)&theDomain));
+      if (strncasecmp(theArgument, "Dirichlet-X", 19) == 0)
+        typeCondition = DIRICHLET_X;
+      if (strncasecmp(theArgument, "Dirichlet-Y", 19) == 0)
+        typeCondition = DIRICHLET_Y;
+      if (strncasecmp(theArgument, "Dirichlet-XY", 19) == 0)
+        typeCondition = DIRICHLET_XY;
+      if (strncasecmp(theArgument, "Dirichlet-N", 19) == 0)
+        typeCondition = DIRICHLET_N;
+      if (strncasecmp(theArgument, "Dirichlet-T", 19) == 0)
+        typeCondition = DIRICHLET_T;
+      if (strncasecmp(theArgument, "Dirichlet-NT", 19) == 0)
+        typeCondition = DIRICHLET_NT;
+      if (strncasecmp(theArgument, "Neumann-X", 19) == 0)
+        typeCondition = NEUMANN_X;
+      if (strncasecmp(theArgument, "Neumann-Y", 19) == 0)
+        typeCondition = NEUMANN_Y;
+      if (strncasecmp(theArgument, "Neumann-N", 19) == 0)
+        typeCondition = NEUMANN_N;
+      if (strncasecmp(theArgument, "Neumann-T", 19) == 0)
+        typeCondition = NEUMANN_T;
+      femElasticityAddBoundaryCondition(theProblem, theDomain, typeCondition, value1, value2);
+    }
+    ErrorScan(fscanf(file, "\n"));
+  }
+
+  int iCase = theProblem->planarStrainStress;
+  double E = theProblem->E;
+  double nu = theProblem->nu;
+
+  if (iCase == PLANAR_STRESS) {
+    theProblem->A = E / (1 - nu * nu);
+    theProblem->B = E * nu / (1 - nu * nu);
+    theProblem->C = E / (2 * (1 + nu));
+  } else if (iCase == PLANAR_STRAIN || iCase == AXISYM) {
+    theProblem->A = E * (1 - nu) / ((1 + nu) * (1 - 2 * nu));
+    theProblem->B = E * nu / ((1 + nu) * (1 - 2 * nu));
+    theProblem->C = E / (2 * (1 + nu));
+  }
+
+  fclose(file);
+  return theProblem;
+}
+
 void femSolutionWrite(int nNodes, int nfields, double *data, const char *filename) {
   FILE *file = fopen(filename, "w");
   if (!file) {
@@ -1277,7 +1395,7 @@ void femElasticityAssembleElementsE_XX(femProblem *theProblem, double *E_XX) {
       }
     }
   }
-  double *solution = femFullSystemEliminate(theSystem);  // il semblerait qu'il y ait eu un problème avec le solver des gradients conjugués
+  double *solution = solve_cg(theSystem);  // il semblerait qu'il y ait eu un problème avec le solver des gradients conjugués
   memcpy(E_XX, solution, sizeof(double) * theNodes->nNodes);
   printf("Number of elements with negative jacobian: %d\n", count);
 }
@@ -1359,7 +1477,7 @@ void femElasticityAssembleElementsE_YY(femProblem *theProblem, double *E_YY) {
       }
     }
   }
-  double *solution = femFullSystemEliminate(theSystem);
+  double *solution = solve_cg(theSystem);
   memcpy(E_YY, solution, sizeof(double) * theNodes->nNodes);
   printf("Number of elements with negative jacobian: %d\n", count);
 }
@@ -1436,7 +1554,7 @@ void femElasticityAssembleElementsE_XY(femProblem *theProblem, double *E_XY) {
       }
     }
   }
-  double *solution = femFullSystemEliminate(theSystem);
+  double *solution = solve_cg(theSystem);
   memcpy(E_XY, solution, sizeof(double) * theNodes->nNodes);
   printf("Number of elements with negative jacobian: %d\n", count);
 }
@@ -1512,7 +1630,7 @@ void femElasticityAssembleElementsE_ThetaTheta(femProblem *theProblem, double *E
       }
     }
   }
-  double *solution = femFullSystemEliminate(theSystem);
+  double *solution = solve_cg(theSystem);
   memcpy(E_ThetaTheta, solution, sizeof(double) * theNodes->nNodes);
   printf("Number of elements with negative jacobian: %d\n", count);
 }
@@ -1802,9 +1920,13 @@ void PrintMatrix(double *M, int N) {
 double *femElasticityForces(femProblem *theProblem){
     femFullSystem  *theSystem = theProblem->system;
     femFullSystemInit(theSystem);
+    printf("A");
     femElasticityAssembleElements(theProblem);
+    printf("B");
     femElasticityAssembleNeumann(theProblem);
-    femElasticityApplyDirichlet(theProblem);       
+    printf("C");
+    femElasticityApplyDirichlet(theProblem);      
+    printf("In function") ;
     double *theResidual = theProblem->residuals;
     for(int i=0; i < theSystem->size; i++) {
         theResidual[i] = 0.0;}
@@ -1837,7 +1959,9 @@ void femElasticityAssembleElements(femProblem *theProblem) {
   double **A = theSystem->A;
   double *B = theSystem->B;
   int count = 0;
+  printf("AA\n");
   for (iElem = 0; iElem < theMesh->nElem; iElem++) {
+    printf("AAB\n");
     for (j = 0; j < nLocal; j++) {
       map[j] = theMesh->elem[iElem * nLocal + j];
       mapX[j] = 2 * map[j];
@@ -1845,6 +1969,7 @@ void femElasticityAssembleElements(femProblem *theProblem) {
       x[j] = theNodes->X[map[j]];
       y[j] = theNodes->Y[map[j]];
     }
+    printf("AB\n");
     
     /*
     printf("Element %d\n", iElem);
@@ -1860,7 +1985,7 @@ void femElasticityAssembleElements(femProblem *theProblem) {
       double weight = theRule->weight[iInteg];
       femDiscretePhi2(theSpace, xsi, eta, phi);
       femDiscreteDphi2(theSpace, xsi, eta, dphidxsi, dphideta);
-
+      printf("AC\n");
       double dxdxsi = 0.0;
       double dxdeta = 0.0;
       double dydxsi = 0.0;
@@ -1879,12 +2004,13 @@ void femElasticityAssembleElements(femProblem *theProblem) {
         count++;
       }
       jac = fabs(jac);
-
+      printf("jac = %f\n", jac);
       for (i = 0; i < theSpace->n; i++) {  // Calcul des dérivées des fonctions de forme
           dphidx[i] = (dphidxsi[i] * dydeta - dphideta[i] * dydxsi) / jac;
           dphidy[i] = (dphideta[i] * dxdxsi - dphidxsi[i] * dxdeta) / jac;
       }
       
+      printf("AD\n");
       if (theProblem->planarStrainStress != AXISYM) {
         // Cas non-axisymétrique
         for (i = 0; i < theSpace->n; i++) {
@@ -1900,6 +2026,7 @@ void femElasticityAssembleElements(femProblem *theProblem) {
           B[mapY[i]] += phi[i] * gy * rho * jac * weight;
         }
       } else if (theProblem->planarStrainStress == AXISYM) {
+      printf("AE\n");
       // Cas axisymétrique
       for (i = 0; i < theSpace->n; i++) {
         for(j = 0; j < theSpace->n; j++) {
@@ -2134,5 +2261,14 @@ void femFullSystemConstrainDirichlet_T(femFullSystem *mySystem, int myNode, doub
   B[2*myNode+1] = myValue*ty + ny*(b_n - myValue*a_tn); 
 }
 
+double *femElasticitySolve(femProblem *theProblem) {
+  femElasticityAssembleElements(theProblem);
+  femElasticityAssembleNeumann(theProblem);
+  femElasticityApplyDirichlet(theProblem);
+
+  double *soluce = solve_cg(theProblem->system);  // solveur itératif des gradients conjugués
+  memcpy(theProblem->soluce, soluce, theProblem->system->size * sizeof(double));
+  return theProblem->soluce;
+}
 
 

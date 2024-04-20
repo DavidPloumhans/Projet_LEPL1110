@@ -28,10 +28,14 @@ int main(void) {
 
   femProblem *theProblem = femElasticityRead(theGeometry, "../../data/problem.txt");
   double *theSoluce = theProblem->soluce;
+  // printf("System size : %d\n", theProblem->system->size);
   int n = theGeometry->theNodes->nNodes;
   femSolutiondRead(2*n,theSoluce, "../../data/UV.txt");
   femElasticityPrint(theProblem);
 
+
+  // tensions aux noeuds
+  
   // X c'est R et Y c'est Z
   // calcul du tenseur des déformations infinitésimales
 
@@ -152,15 +156,34 @@ int main(void) {
     printf("CM[%d] = %f\n", i, CM[i]);
   }
   */
-
-  // valeur de la contrainte selon ZZ sur le haut
-  int numberT[3] = {55, 57, 58};  // noeuds appartennant au domaine "Bottom"  (j'ai été voir dans le fichier mesh.txt)
+  // calcul de la moyenne des contraintes sur le top domain
+  // récupère les noeuds du dit domain  => fonctionne
   double average_value_YY_top = 0;
-  for (int i = 0; i < 3; i++) {
-    average_value_YY_top += sigma_YY[numberT[i]];
+  double average_value_YY_bottom = 0;
+  
+  femDomain *topDomain = theGeometry->theDomains[1];  // top domain
+  for (int i = 0; i < topDomain->nElem; i++) {
+    int edge = topDomain->elem[i];
+    int node1 = theProblem->geometry->theEdges->elem[2 * edge];
+    int node2 = theProblem->geometry->theEdges->elem[2 * edge + 1];
+    average_value_YY_top += sigma_YY[node1] + sigma_YY[node2];
+    // printf("Edge %d : node1 = %d, node2 = %d\n", edge, node1, node2);
+    // printf("sigma_ZZ_node1 = %f\n", sigma_YY[node1]);
+    // printf("sigma_ZZ_node2 = %f\n", sigma_YY[node2]);
   }
-  average_value_YY_top /= 3.0;
+  average_value_YY_top /= 2 * topDomain->nElem;
   printf(" ==== Average value of sigma_YY on the top domain       :      %f\n", average_value_YY_top);
+
+  // calcul de la moyenne des contraintes sur bottom domain
+  femDomain *bottomDomain = theGeometry->theDomains[9];  // bottom domain
+  for (int i = 0; i < bottomDomain->nElem; i++) {
+    int edge = bottomDomain->elem[i];
+    int node1 = theProblem->geometry->theEdges->elem[2 * edge];
+    int node2 = theProblem->geometry->theEdges->elem[2 * edge + 1];
+    average_value_YY_bottom += sigma_YY[node1] + sigma_YY[node2];
+  }
+  average_value_YY_bottom /= 2 * bottomDomain->nElem;
+  printf(" ==== Average value of sigma_YY on the bottom domain    :      %f\n", average_value_YY_bottom);
   
   //
   //  -2- Deformation du maillage pour le plot final
@@ -168,13 +191,15 @@ int main(void) {
   //
 
   femNodes *theNodes = theGeometry->theNodes;
-  double deformationFactor = 1e2;  // change le facteur de déformation pour ne pas avoir quelque chose d'absurde
+  double deformationFactor = 50;  // change le facteur de déformation pour ne pas avoir quelque chose d'absurde
   double *normDisplacement = malloc(theNodes->nNodes * sizeof(double));
 
   for (int i = 0; i < n; i++) {
-    theNodes->X[i] += theSoluce[2 * i + 0] * deformationFactor;
-    theNodes->Y[i] += theSoluce[2 * i + 1] * deformationFactor;
     normDisplacement[i] = sqrt(theSoluce[2 * i + 0] * theSoluce[2 * i + 0] + theSoluce[2 * i + 1] * theSoluce[2 * i + 1]);
+  }
+  for (int i = 0; i < n; i++) {
+    theNodes->X[i] += deformationFactor * theSoluce[2 * i + 0];
+    theNodes->Y[i] += deformationFactor * theSoluce[2 * i + 1];
   }
 
   double hMin = femMin(normDisplacement, n);
@@ -185,6 +210,12 @@ int main(void) {
   //
   //  -3- Visualisation
   //
+  // Passage des contraintes à l'autre signe pour l'affichage
+  for (int i = 0; i < n; i++) {
+    sigma_YY[i] = abs(sigma_YY[i]); // mets en valeur absolue
+  }
+
+  // Initialisation de la fenetre graphique
 
   int mode = 1;
   int domain = 0;
@@ -198,13 +229,12 @@ int main(void) {
   glfwSetScrollCallback(window, scroll_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-  bool autoSwtich = true;  // ce qu'il faut mettre pour avoir la "vidéo"
-
+  bool autoSwtich = false;  // ce qu'il faut mettre pour avoir la "vidéo"
   if (autoSwtich) {  // ça marche
 
     for (mode; mode < 5; mode++) {
       double start = glfwGetTime();
-      while (glfwGetTime() - start < 3.0) {
+      while (glfwGetTime() - start < 2.0) {
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
         glfemReshapeWindows(window, theGeometry->theNodes, w, h);
@@ -212,7 +242,7 @@ int main(void) {
         if (mode == 1) {
           glfemPlotField(theGeometry->theElements, normDisplacement);
           glfemPlotMesh(theGeometry->theElements);
-          sprintf(theMessage, "Deformation elastique (* %d)  Number of elements : %d ", (int) deformationFactor, theGeometry->theElements->nElem);
+          sprintf(theMessage, "Deplacement elastique (* %d)  Number of elements : %d ", (int) deformationFactor, theGeometry->theElements->nElem);
           glColor3f(1.0, 0.0, 0.0);
           glfemMessage(theMessage);
         }
@@ -228,9 +258,11 @@ int main(void) {
         {
           glfemPlotField(theGeometry->theElements, sigma_YY);
           glfemPlotMesh(theGeometry->theElements);
-          sprintf(theMessage, "sigma_zz moyen sur top domain : %f MPa", average_value_YY_top / 1.e6);
+          sprintf(theMessage, "sigma_zz (moyen sur top domain : %f MPa)", average_value_YY_top / 1.e6);
           glColor3f(1.0, 0.0, 0.0);
           glfemMessage(theMessage);
+          sprintf(theMessage, "sigma_zz (moyen sur bottom domain : %f MPa)", average_value_YY_bottom / 1.e6);
+          glfemMessage2(theMessage);
         }
         if (mode == 4) // affichage de Coulomb-Mohr
         {
@@ -281,7 +313,7 @@ int main(void) {
       if (mode == 1) {
         glfemPlotField(theGeometry->theElements, normDisplacement);
         glfemPlotMesh(theGeometry->theElements);
-        sprintf(theMessage, "Elastic deformation   Number of elements : %d ", theGeometry->theElements->nElem);
+        sprintf(theMessage, "Deplacement elastique (* %d)  Number of elements : %d ", (int) deformationFactor, theGeometry->theElements->nElem);
         glColor3f(1.0, 0.0, 0.0);
         glfemMessage(theMessage);
       }
@@ -297,9 +329,11 @@ int main(void) {
       {
         glfemPlotField(theGeometry->theElements, sigma_YY);
         glfemPlotMesh(theGeometry->theElements);
-        sprintf(theMessage, "sigma_zz moyen sur top domain : %f MPa", average_value_YY_top / 1.e6);
-        glColor3f(1.0, 0.0, 0.0);
+        sprintf(theMessage, "sigma_zz (moyen sur top domain : %f MPa)", average_value_YY_top / 1.e6);
         glfemMessage(theMessage);
+        sprintf(theMessage, "sigma_zz (moyen sur bottom domain : %f MPa)", average_value_YY_bottom / 1.e6);
+        glfemMessage2(theMessage);
+        glColor3f(1.0, 0.0, 0.0);
       }
       if (mode == 4) // affichage de Coulomb-Mohr
       {

@@ -173,7 +173,7 @@ void femElasticityAssembleNeumann(femProblem *theProblem) {
         }
       } else if (theProblem->planarStrainStress == AXISYM) {  // même chose mais facteur xLoc en plus
         for (iInteg = 0; iInteg < theRule->n; iInteg++) {
-          int xLoc = 0.0;
+          double xLoc = 0.0;
           double xsi = theRule->xsi[iInteg];
           double weight = theRule->weight[iInteg];
           femDiscretePhi(theSpace, xsi, phi);
@@ -243,7 +243,6 @@ double *femElasticitySolve(femProblem *theProblem) {
   femElasticityAssembleElements(theProblem);
   femElasticityAssembleNeumann(theProblem);
   femElasticityApplyDirichlet(theProblem);
-
   double *soluce = solve_cg(theProblem->system);  // solveur itératif des gradients conjugués
   memcpy(theProblem->soluce, soluce, theProblem->system->size * sizeof(double));
   return theProblem->soluce;
