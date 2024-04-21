@@ -6,7 +6,7 @@ import os
 files = os.listdir('images')  # liste des fichiers images
 
 
-case = 0.1 # facteur entre sigma_fluid et sigma_bottom
+case = 0.2 # facteur entre sigma_fluid et sigma_bottom
 meshname = str(case)  # nom du mesh dont on fait la vidéo
 # Create a VideoWriter object
 size = 650 * 2
