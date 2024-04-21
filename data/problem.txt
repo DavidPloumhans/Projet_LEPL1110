@@ -6,10 +6,10 @@ Gravity-X          :  0.0000000e+00
 Gravity-Y          : -9.8100000e+00  
 Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Symetry
 Boundary condition :  Dirichlet-Y        =  0.0000000e+00,            nan : Top
-Boundary condition :  Neumann-X          = -8.2500000e+08,            nan : Upper_line_brown
-Boundary condition :  Neumann-N          = -1.6500000e+09,            nan : Upper_curvature
-Boundary condition :  Neumann-N          = -1.6500000e+09,            nan : Concave_curvature
-Boundary condition :  Neumann-X          = -1.6500000e+09,            nan : Purple_line
-Boundary condition :  Neumann-X          = -8.2500000e+08,            nan : Lower_line_brown
-Boundary condition :  Neumann-N          = -5.0000000e+09,            nan : Bottom_curve
-Boundary condition :  Neumann-Y          =  5.0000000e+09,            nan : Bottom
+Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Upper_line_brown
+Boundary condition :  Neumann-N          = -8.0000000e+08,            nan : Upper_curvature
+Boundary condition :  Neumann-N          = -8.0000000e+08,            nan : Concave_curvature
+Boundary condition :  Neumann-X          = -8.0000000e+08,            nan : Purple_line
+Boundary condition :  Dirichlet-X        =  0.0000000e+00,            nan : Lower_line_brown
+Boundary condition :  Neumann-N          = -8.0000000e+09,            nan : Bottom_curve
+Boundary condition :  Neumann-Y          =  8.0000000e+09,            nan : Bottom

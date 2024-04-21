@@ -212,7 +212,7 @@ int main(void) {
   //
   // Passage des contraintes à l'autre signe pour l'affichage
   for (int i = 0; i < n; i++) {
-    sigma_YY[i] = abs(sigma_YY[i]); // mets en valeur absolue
+    sigma_YY[i] = -sigma_YY[i]; // mets en valeur absolue
   }
 
   // Initialisation de la fenetre graphique
@@ -229,12 +229,12 @@ int main(void) {
   glfwSetScrollCallback(window, scroll_callback);
   glfwSetMouseButtonCallback(window, mouse_button_callback);
 
-  bool autoSwtich = false;  // ce qu'il faut mettre pour avoir la "vidéo"
+  bool autoSwtich = true;  // ce qu'il faut mettre pour avoir la "vidéo"
   if (autoSwtich) {  // ça marche
 
     for (mode; mode < 5; mode++) {
       double start = glfwGetTime();
-      while (glfwGetTime() - start < 2.0) {
+      while (glfwGetTime() - start < 1.5) {
         int w, h;
         glfwGetFramebufferSize(window, &w, &h);
         glfemReshapeWindows(window, theGeometry->theNodes, w, h);
@@ -250,9 +250,11 @@ int main(void) {
         {
           glfemPlotField(theGeometry->theElements, sigma_VM);
           glfemPlotMesh(theGeometry->theElements);
-          sprintf(theMessage, "Contrainte de Von Mises", vonMisesMax / 1.e6);
+          sprintf(theMessage, "Contrainte de Von Mises minimum : %f MPa", vonMisesMin / 1.e6);
           glColor3f(1.0, 0.0, 0.0);
           glfemMessage(theMessage);
+          sprintf(theMessage, "Contrainte de Von Mises maximum : %f MPa", vonMisesMax / 1.e6);
+          glfemMessage2(theMessage);
         }
         if (mode == 3) // affichage de sigma_YY (ZZ stress)
         {
@@ -321,19 +323,21 @@ int main(void) {
       {
         glfemPlotField(theGeometry->theElements, sigma_VM);
         glfemPlotMesh(theGeometry->theElements);
-        sprintf(theMessage, "Von mises stress", vonMisesMax / 1.e6);
+        sprintf(theMessage, "Contrainte de Von Mises minimum : %f MPa", vonMisesMin / 1.e6);
         glColor3f(1.0, 0.0, 0.0);
         glfemMessage(theMessage);
+        sprintf(theMessage, "Contrainte de Von Mises maximum : %f MPa", vonMisesMax / 1.e6);
+        glfemMessage2(theMessage);
       }
       if (mode == 3) // affichage de sigma_YY (ZZ stress)
       {
         glfemPlotField(theGeometry->theElements, sigma_YY);
         glfemPlotMesh(theGeometry->theElements);
         sprintf(theMessage, "sigma_zz (moyen sur top domain : %f MPa)", average_value_YY_top / 1.e6);
+        glColor3f(1.0, 0.0, 0.0);
         glfemMessage(theMessage);
         sprintf(theMessage, "sigma_zz (moyen sur bottom domain : %f MPa)", average_value_YY_bottom / 1.e6);
         glfemMessage2(theMessage);
-        glColor3f(1.0, 0.0, 0.0);
       }
       if (mode == 4) // affichage de Coulomb-Mohr
       {

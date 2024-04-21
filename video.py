@@ -5,11 +5,12 @@ import os
 
 files = os.listdir('images')  # liste des fichiers images
 
-meshname = "mesh3"  # nom du mesh dont on fait la vidéo
+
 case = 0.1 # facteur entre sigma_fluid et sigma_bottom
+meshname = str(case)  # nom du mesh dont on fait la vidéo
 # Create a VideoWriter object
 size = 650 * 2
-fps = 10
+fps = 24
 output = cv2.VideoWriter(f'output_{case}.avi', cv2.VideoWriter_fourcc(*'XVID'), fps, (size, size))
 
 # find the sigmas

@@ -13,13 +13,14 @@ def take_screenshot(img_name):
 
 def capture_images(mesh, sigma_bottom, initial_sleep, interval=2):
     time.sleep(initial_sleep)
-    take_screenshot(f"{mesh}_{sigma_bottom}_def.png")  # deformation
+    path = "C:/Users/Boss/Desktop/LEPL1110/Projet/images"
+    take_screenshot(path + f"/{mesh}_{sigma_bottom}_def.png")  # deformation
     time.sleep(interval)
-    take_screenshot(f"{mesh}_{sigma_bottom}_VM.png")  # Von Mises
+    take_screenshot(path + f"/{mesh}_{sigma_bottom}_VM.png")  # Von Mises
     time.sleep(interval)
-    take_screenshot(f"{mesh}_{sigma_bottom}_ZZ.png")  # Sigma ZZ
+    take_screenshot(path + f"/{mesh}_{sigma_bottom}_ZZ.png")  # Sigma ZZ
     time.sleep(interval)
-    take_screenshot(f"{mesh}_{sigma_bottom}_CM.png")  # Coulomb Mohr YY
+    take_screenshot(path + f"/{mesh}_{sigma_bottom}_CM.png")  # Coulomb Mohr YY
 
 def run(sigma_bottom):
     # Run les 3 projets
@@ -35,11 +36,11 @@ def run(sigma_bottom):
     case = 0.1
     sigma_fluid = case * sigma_bottom
     # je change les valeurs
-    lines[8] = f"Boundary condition :  Neumann-N          = -{sigma_fluid:.7e},            nan : Upper_curvature\n"
-    lines[9] = f"Boundary condition :  Neumann-N          = -{sigma_fluid:.7e},            nan : Concave_curvature\n"
-    lines[10] = f"Boundary condition :  Neumann-X          = -{sigma_fluid:.7e},            nan : Purple_line\n"
-    lines[12] = f"Boundary condition :  Neumann-N          =  {sigma_bottom:.7e},            nan : Bottom_curve\n"
-    lines[13] = f"Boundary condition :  Neumann-Y          =  {sigma_bottom:.7e},            nan : Bottom\n"
+    lines[9] = f"Boundary condition :  Neumann-N          = -{sigma_fluid:.7e},            nan : Upper_curvature\n"
+    lines[10] = f"Boundary condition :  Neumann-N          = -{sigma_fluid:.7e},            nan : Concave_curvature\n"
+    lines[11] = f"Boundary condition :  Neumann-X          = -{sigma_fluid:.7e},            nan : Purple_line\n"
+    lines[13] = f"Boundary condition :  Neumann-N          = -{sigma_bottom:.7e},            nan : Bottom_curve\n"
+    lines[14] = f"Boundary condition :  Neumann-Y          =  {sigma_bottom:.7e},            nan : Bottom\n"
     with open("data/problem.txt", "w") as file:
         file.writelines(lines)
         file.close()
@@ -57,7 +58,7 @@ def run(sigma_bottom):
     # PostProcessor
     os.chdir(original_dir)
     # il va falloir prendre des screens avec la fonction capture_images
-    thread = threading.Thread(target=capture_images, args=("mesh3", sigma_bottom, 3.5))
+    thread = threading.Thread(target=capture_images, args=(str(case), sigma_bottom, 1.75, 1.5))
     command = '.\myFem.exe'
     thread.start()
     post_dir = "ProjectPostProcessor"
@@ -69,8 +70,8 @@ def run(sigma_bottom):
 
 
 def main():
-    nbr_image = 20
-    sigma_bottoms = np.linspace(10**8, 10**10, nbr_image)
+    nbr_image = 50
+    sigma_bottoms = np.linspace(10**8, 8 * 10**9, nbr_image)
     for sigma_bottom in sigma_bottoms:
         run(sigma_bottom)
 
